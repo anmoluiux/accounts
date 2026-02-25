@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # The Next.js App
+  app:
+    container_name: saas_onboarding_app
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner # Use 'base' or just rely on dev command for local dev
+    # For local development, override the command to run dev server
+    # command: npm run dev
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/saas_builder
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    networks:
+      - saas_network
+
+  # The Database
+  db:
+    container_name: saas_postgres
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: saas_builder
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - saas_network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"
+
+networks:
+  saas_network:
+    driver: bridge
+
+volumes:
+  postgres_data:

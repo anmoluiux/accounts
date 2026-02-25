@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. The "Draft" (Before they register)
+model Lead {
+  id              String   @id @default(uuid())
+  email           String?
+  phone           String?
+
+  // Step 1
+  siteName        String?
+  siteType        String?
+  details         Json?    @default("{}") // JSON object (Postgres specific)
+
+  // Step 3
+  description     String?
+  features        String[] // Array of strings (Postgres specific)
+
+  // Meta
+  isConverted     Boolean  @default(false) // Becomes true when they register
+  convertedUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// 2. The User (After Registration)
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  fullName       String?
+
+  sites          Site[]
+  createdAt      DateTime  @default(now())
+}
+
+// 3. The Site (The Final Product)
+model Site {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+
+  name           String   // Display name (e.g. "My Bakery")
+  subdomain      String   @unique
+  customDomain   String?  @unique
+
+  // 👇 YOU NEED THESE TWO:
+  type           String   // e.g. "restaurant", "fashion"
+  description    String?  // e.g. "Best pizza in NYC"
+
+  // Adding default("{}") makes your life easier
+  config         Json     @default("{}")
+  status      String   @default("PENDING") // Options: PENDING, BUILDING, COMPLETED, FAILED
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt // Good practice to have
+}
