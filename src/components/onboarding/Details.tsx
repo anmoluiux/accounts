@@ -10,6 +10,10 @@ import { updateFormData, setStep, saveProgress, setBoardState } from "@/src/stor
 import { InputNumber } from "antd";
 import { setBoardMerge } from "@/src/store/onboardingSlice";
 import { URL } from "@/src/assets/url";
+import debounce from "lodash/debounce";
+import { CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
+import { useRef } from "react";
+
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -60,6 +64,68 @@ export default function Details() {
   // Local state for Phone (React-phone-number-input uses its own state)
   const [phoneValue, setPhoneValue] = useState(stepData.phone || "");
 
+
+  // Email validation state
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [isEmailAvailable, setIsEmailAvailable] = useState<boolean | null>(null);
+  const [emailError, setEmailError] = useState("");
+
+  const debouncedCheckEmail = useRef(
+  debounce(async (email: string) => {
+    if (!email) {
+      setIsCheckingEmail(false);
+      setIsEmailAvailable(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${URL.CHECK_EMAIL}?email=${email}`);
+      const result = await res.json();
+
+      setIsCheckingEmail(false);
+
+      // ✅ IMPORTANT: use result.data.available
+      const available = result?.data?.available;
+
+      if (available === false) {
+        setIsEmailAvailable(false);
+        setEmailError("Email already registered");
+      } else if (available === true) {
+        setIsEmailAvailable(true);
+        setEmailError("");
+      } else {
+        setIsEmailAvailable(null);
+        setEmailError("Invalid response");
+      }
+    } catch (err) {
+      setIsCheckingEmail(false);
+      setIsEmailAvailable(false);
+      setEmailError("Network error");
+    }
+  }, 500)
+).current;
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+
+    form.setFieldsValue({ email: val });
+    setIsEmailAvailable(null);
+    setEmailError("");
+
+    if (val && /\S+@\S+\.\S+/.test(val)) {
+      setIsCheckingEmail(true);
+      debouncedCheckEmail(val);
+    } else {
+      setIsCheckingEmail(false);
+    }
+  };
+
+  const EmailStatusSuffix = () => {
+    if (isCheckingEmail) return <LoadingOutlined />;
+    if (isEmailAvailable === true) return <CheckCircleFilled className="text-green-500" />;
+    if (isEmailAvailable === false) return <CloseCircleFilled className="text-red-500" />;
+    return null;
+  };
+
   // Pre-fill form on mount
   useEffect(() => {
     form.setFieldsValue({
@@ -72,12 +138,12 @@ export default function Details() {
 
   const onFinish = async (values: any) => {
 
-    // STEP 1 : Save to Redux and DB
+    // STEP 1 : Save LEAD to Redux and DB
+    // STEP 1 : Save LEAD to Redux and DB
     dispatch(updateFormData({ description: values.description, features: values.features, email: values.email, phone: values.phone, }));
     await dispatch(saveProgress()).unwrap();
 
-
-
+    // STEP 2 : Next Register lead as Customer : Returns Customer and Site data
     // STEP 2 : Next Register lead as Customer : Returns Customer and Site data
     const response = await fetch(URL.REGISTER, {
       method: "POST",
@@ -86,30 +152,39 @@ export default function Details() {
     });
 
     const data = await response.json();
-    const siteData = data.data.site;
-    const customerData = data.data.customer;
-    const customer_id = customerData.id || '1';
+    const siteData      = await data?.data.site;
+    const customerData  = await data?.data.customer;
+    const customer_id   = customerData.id || null;
+    console.log("Register Customer Data", data?.data, siteData, customerData);
 
-    console.log("Customer Data", data.data, siteData, customerData);
     dispatch(setBoardMerge({ name: `users.${customer_id}`, data: { ...data.data } }));
     dispatch(setBoardState({ name: `customer_id`, data: customer_id }));
+    // STEP 2 : Next Register lead as Customer : Returns Customer and Site data
+    // STEP 2 : Next Register lead as Customer : Returns Customer and Site data
 
 
 
     // STEP 3 : Trigger Site Creation
+    // STEP 3 : Trigger Site Creation
     const siteResponse = await fetch(URL.CREATE_STORE, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json"},
       body: JSON.stringify({ site_id: siteData.id, }),
     });
-
     const siteResponseData = await siteResponse.json();
-    console.log("Site Data", siteResponseData);
-    dispatch(setBoardMerge({ name: `userData.${onBoard.lead_id}`, data: siteResponseData }));
-    dispatch(setStep(2));
+
+    dispatch(setBoardMerge({ name: `users.${customer_id}.message`, data: siteResponseData.message }));
+
+    if(siteResponseData.status === "success"){
+      dispatch(setStep(2));
+    }
   };
+
+  useEffect(() => {
+    return () => {
+      debouncedCheckEmail.cancel();
+    };
+  }, [debouncedCheckEmail]);
 
   return (
     <div className="w-full max-w-3xl mx-auto px-4 animate-fadeIn pb-10">
@@ -143,13 +218,23 @@ export default function Details() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {/* 3. Email */}
             <Form.Item
-              label={<span className="font-semibold text-gray-700">Your Email</span>}
+              label={
+                <span className="font-semibold text-gray-700">
+                  Your Email {emailError && <span className="text-red-500 ml-2">- {emailError}</span>}
+                </span>
+              }
               name="email"
+              validateStatus={isEmailAvailable === false ? "error" : ""}
               rules={[
                 { required: true, message: "Email is required" },
                 { type: "email", message: "Please enter a valid email" },
-              ]}>
-              <Input placeholder="john@example.com" />
+              ]}
+            >
+              <Input
+                placeholder="john@example.com"
+                onChange={handleEmailChange}
+                suffix={<EmailStatusSuffix />}
+              />
             </Form.Item>
 
             {/* 4. Phone (Custom Lib) */}
@@ -169,7 +254,15 @@ export default function Details() {
           <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
             <Button type="text" size="large" icon={<ArrowLeftOutlined />} onClick={() => dispatch(setStep(0))}>Back</Button>
 
-            <Button type="primary" htmlType="submit" size="large" className="h-12 px-8 text-lg font-semibold bg-blue-600 hover:bg-blue-500 shadow-blue-200 shadow-lg" icon={<RocketFilled />} iconPlacement="end">
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              disabled={isEmailAvailable === false || isCheckingEmail}
+              className="h-12 px-8 text-lg font-semibold bg-blue-600 hover:bg-blue-500 shadow-blue-200 shadow-lg"
+              icon={<RocketFilled />}
+              iconPlacement="end"
+            >
               Generate Site
             </Button>
           </div>

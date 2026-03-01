@@ -13,7 +13,7 @@ const LOADING_PHRASES = ["Initializing server environment...", "Cloning OpenCart
 export default function Building() {
   const dispatch = useAppDispatch();
   // Ensure your redux store has these values
-  const { stepData, userData } = useAppSelector((state) => state.onboarding);
+  const { stepData, users } = useAppSelector((state) => state.onboarding);
 
   const [percent, setPercent] = useState(0);
   const [status, setStatus] = useState("PENDING"); // PENDING | BUILDING | COMPLETED | FAILED
@@ -50,8 +50,13 @@ export default function Building() {
         // Assuming stepData.config.db_database exists from Step 2
         // If not, you might need to regenerate the name logic here or ensure it's in Redux
         const dbName = stepData.siteName; // fallback logic
-        const site_id = userData.site.id;
-        const customer_id = userData.site.customer_id;
+        const record = Object.values(users)[0]
+
+        const site_id = record?.site?.id
+        const customer_id = record?.customer?.id
+
+        // const site_id = userData.site.id;
+        // const customer_id = userData.site.customer_id;
 
         if (!site_id || !customer_id) {
           throw new Error("Session lost. Please refresh or login again.");

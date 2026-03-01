@@ -1,4 +1,6 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
+import { URL } from "@/src/assets/url";
+
 var _ = require("lodash");
 
 // 1. Define the State Interface
@@ -23,10 +25,12 @@ interface OnboardingState {
     email?: string;
     phone?: string;
   };
+
   users: {
     [key: string]: {
       customer: any;
       site: any;
+      status: any;
     };
   };
   isLoading: boolean;
@@ -55,7 +59,7 @@ export const saveProgress = createAsyncThunk("onboarding/saveProgress", async (_
     const state = getState() as { onboarding: OnboardingState };
     const { lead_id, stepData } = state.onboarding;
 
-    const res = await fetch("http://localhost/api/v1/onboard/lead", {
+    const res = await fetch(URL.ONBOARD_LEAD, {
       method: "POST", // Laravel upsert handles both creation and update
       headers: {
         "Content-Type": "application/json",
@@ -141,6 +145,12 @@ export const onboardingSlice = createSlice({
       }
     },
     resetOnboarding: () => initialState,
+    resetStepData: (state) => {
+      state.lead_id     = null;
+      state.customer_id = null;
+      state.currentStep = 0;
+      state.stepData    = initialState.stepData;
+    },
   },
 
   // Handle Async API Responses
@@ -166,5 +176,5 @@ export const onboardingSlice = createSlice({
 });
 
 // 5. Exports
-export const { setStep, setLeadId, updateFormData, resetOnboarding, setBoardState, setBoardMerge } = onboardingSlice.actions;
+export const { setStep, setLeadId, updateFormData, resetOnboarding, setBoardState, setBoardMerge, resetStepData } = onboardingSlice.actions;
 export default onboardingSlice.reducer;

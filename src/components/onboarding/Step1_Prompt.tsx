@@ -6,6 +6,7 @@ import { ArrowRightOutlined, ThunderboltFilled, CheckCircleFilled, CloseCircleFi
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
 import { saveProgress, setStep, updateFormData } from "@/src/store/onboardingSlice";
 import debounce from "lodash/debounce";
+import { URL, MAIN_SITE_URL } from "@/src/assets/url";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -35,7 +36,7 @@ export default function Step1_Prompt() {
       }
 
       try {
-        const res = await fetch(`http://localhost/api/v1/onboard/check-subdomain?subdomain=${val}`);
+        const res = await fetch(`${URL.CHECK_SUBDOMAIN}?subdomain=${val}`);
         const data = await res.json().then((res) => res.data);
         console.log("API Response:", data)
         setIsChecking(false);
@@ -150,7 +151,7 @@ export default function Step1_Prompt() {
               {/* Domain suffix */}
               <Input
                 size="large"
-                value=".shinestar.com"
+                value={'.'+MAIN_SITE_URL}
                 readOnly
                 className="rounded-r-lg border-l-0 bg-white text-gray-500"
                 style={{
