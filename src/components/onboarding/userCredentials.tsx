@@ -70,8 +70,8 @@ export default function Building() {
         const site_id = userData?.site?.id;
         if (!site_id) return;
 
-        const response  = await fetch(`${URL.STORE_STATUS}?site_id=${site_id}`);
-        const result    = await response.json();
+        const response = await fetch(`${URL.STORE_STATUS}?site_id=${site_id}`);
+        const result = await response.json();
 
         dispatch(setBoardMerge({ name: `users.${customer_id}.status`, data: result.data }));
 
@@ -133,9 +133,12 @@ export default function Building() {
     }, 1500);
   };
 
-  if(!userData?.site){
+  if (!userData?.site) {
     return <div>Loading...</div>
   }
+
+  const adminLoginLink = `https://${userData?.site.subdomain}.${MAIN_SITE_URL}/admin`;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 w-full max-w-2xl mx-auto px-4">
       <div className="mb-8 text-center">
@@ -155,109 +158,109 @@ export default function Building() {
       <Button onClick={clearLead}>Create New</Button>
 
       {/* Timeline Logs (Optional) */}
-      {OverallStatus.status === "COMPLETED" &&
-      <Card title="Site Details" size="small" className="w-full overflow-y-auto">
+      {OverallStatus?.status === "COMPLETED" &&
+        <Card title="Site Details" size="small" className="w-full overflow-y-auto">
 
-        <Descriptions
-          column={1}
-          labelStyle={{ fontWeight: 500, width: 220 }}
-          contentStyle={{ display: "flex", alignItems: "center" }}
-        >
-          {/* Site Name */}
-          <Descriptions.Item
-            label={
-              <Space>
-                <GlobalOutlined />
-                Site Name
-              </Space>
-            }
+          <Descriptions
+            column={1}
+            labelStyle={{ fontWeight: 500, width: 220 }}
+            contentStyle={{ display: "flex", alignItems: "center" }}
           >
-            <Text strong>{userData?.site.name}</Text>
-          </Descriptions.Item>
+            {/* Site Name */}
+            <Descriptions.Item
+              label={
+                <Space>
+                  <GlobalOutlined />
+                  Site Name
+                </Space>
+              }
+            >
+              <Text strong>{userData?.site.name}</Text>
+            </Descriptions.Item>
 
-          {/* Type */}
-          <Descriptions.Item
-            label={
+            {/* Type */}
+            <Descriptions.Item
+              label={
+                <Space>
+                  <AppstoreOutlined />
+                  Type
+                </Space>
+              }
+            >
+              <Tag color="blue">{userData?.site.type}</Tag>
+            </Descriptions.Item>
+
+            {/* Store Link */}
+            <Descriptions.Item
+              label={
+                <Space>
+                  <LinkOutlined />
+                  Store Link
+                </Space>
+              }
+            >
               <Space>
-                <AppstoreOutlined />
-                Type
+                <Text>{userData?.site.subdomain}.{MAIN_SITE_URL}</Text>
+                <Tooltip title="Open in new tab">
+                  <Button
+                    type="text"
+                    icon={<LinkOutlined />}
+                    onClick={() => window.open(`https://${userData?.site.subdomain}.${MAIN_SITE_URL}`, "_blank")}
+                  />
+                </Tooltip>
+                <Tooltip title="Copy link">
+                  <Button
+                    type="text"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyToClipboard(`https://${userData?.site.subdomain}.${MAIN_SITE_URL}`)}
+                  />
+                </Tooltip>
               </Space>
-            }
-          >
-            <Tag color="blue">{userData?.site.type}</Tag>
-          </Descriptions.Item>
+            </Descriptions.Item>
 
-          {/* Store Link */}
-          <Descriptions.Item
-            label={
+            {/* Admin Login Link */}
+            <Descriptions.Item
+              label={
+                <Space>
+                  <LinkOutlined />
+                  Admin Login
+                </Space>
+              }
+            >
               <Space>
-                <LinkOutlined />
-                Store Link
+                <Text>{userData?.site.subdomain}.{MAIN_SITE_URL}/admin</Text>
+                <Tooltip title="Open admin panel">
+                  <Button
+                    type="text"
+                    icon={<LinkOutlined />}
+                    onClick={() => window.open(adminLoginLink, "_blank")}
+                  />
+                </Tooltip>
+                <Tooltip title="Copy link">
+                  <Button
+                    type="text"
+                    icon={<CopyOutlined />}
+                    onClick={() => copyToClipboard(adminLoginLink)}
+                  />
+                </Tooltip>
               </Space>
-            }
-          >
-            <Space>
-              <Text>{userData?.site.subdomain}.{MAIN_SITE_URL}</Text>
-              <Tooltip title="Open in new tab">
-                <Button
-                  type="text"
-                  icon={<LinkOutlined />}
-                  onClick={() => window.open(`https://${userData?.site.subdomain}.${MAIN_SITE_URL}`, "_blank")}
-                />
-              </Tooltip>
-              <Tooltip title="Copy link">
-                <Button
-                  type="text"
-                  icon={<CopyOutlined />}
-                  onClick={() => copyToClipboard(`https://${userData?.site.subdomain}.${MAIN_SITE_URL}`)}
-                />
-              </Tooltip>
-            </Space>
-          </Descriptions.Item>
+            </Descriptions.Item>
 
-          {/* Admin Login Link */}
-          <Descriptions.Item
-            label={
+            {/* Admin Password */}
+            <Descriptions.Item
+              label={
+                <Space>
+                  <LockOutlined />
+                  Admin Password
+                </Space>
+              }
+            >
               <Space>
-                <LinkOutlined />
-                Admin Login
-              </Space>
-            }
-          >
-            <Space>
-              <Text>{userData?.site.subdomain}.{MAIN_SITE_URL}/admin</Text>
-              <Tooltip title="Open admin panel">
-                <Button
-                  type="text"
-                  icon={<LinkOutlined />}
-                  onClick={() => window.open('adminLoginLink', "_blank")}
-                />
-              </Tooltip>
-              <Tooltip title="Copy link">
-                <Button
-                  type="text"
-                  icon={<CopyOutlined />}
-                  onClick={() => copyToClipboard('adminLoginLink')}
-                />
-              </Tooltip>
-            </Space>
-          </Descriptions.Item>
+                <Text>
+                  {showPassword ? 'adminPassword' : "********"}
+                </Text>
 
-          {/* Admin Password */}
-          <Descriptions.Item
-            label={
-              <Space>
-                <LockOutlined />
-                Admin Password
-              </Space>
-            }
-          >
-            <Space>
-              <Text>
-                {showPassword ? 'adminPassword' : "********"}
-              </Text>
-
-              {/* <Tooltip title={showPassword ? "Hide password" : "Show password"}>
+                {/* <Tooltip title={showPassword ? "Hide password" : "Show password"}>
                 <Button
                   type="text"
                   icon={showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
@@ -273,20 +276,20 @@ export default function Building() {
                 />
               </Tooltip> */}
 
-              <Text type="secondary" style={{ fontSize: 12 }}> Your Password</Text>
-            </Space>
-        </Descriptions.Item>
-      </Descriptions>
+                <Text type="secondary" style={{ fontSize: 12 }}> Your Password</Text>
+              </Space>
+            </Descriptions.Item>
+          </Descriptions>
 
 
 
 
-        {/* <List
+          {/* <List
           size="small"
           dataSource={timeline}
           renderItem={(item) => <List.Item className="text-xs font-mono">{item}</List.Item>}
         /> */}
-      </Card>
+        </Card>
       }
     </div>
   );

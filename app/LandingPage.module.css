@@ -1,0 +1,361 @@
+.header {
+    background: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5%;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 64px;
+}
+
+.heroSection {
+    padding: 40px 5% 60px;
+    background: radial-gradient(circle at bottom right, #f0f7ff 0%, #ffffff 70%);
+}
+
+.heroTitle {
+    font-size: 32px !important;
+    /* Mobile size */
+    margin-top: 16px !important;
+}
+
+.heroSubText {
+    font-size: 16px !important;
+}
+
+.navLink {
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.navLink:hover {
+    color: #1890ff !important;
+}
+
+.logoFlex {
+    gap: 24px;
+    margin-top: 32px;
+}
+
+.brandLogo {
+    font-size: 18px;
+    font-weight: 800;
+    color: #d9d9d9;
+    padding: 0 10px;
+}
+
+.socialText {
+    display: block;
+    text-align: center;
+}
+
+.featuresGrid {
+    padding: 60px 5%;
+}
+
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+/* Tablet & Desktop Adjustments */
+@media (min-width: 768px) {
+    .header {
+        padding: 0 10%;
+        height: 80px;
+    }
+
+    .heroSection {
+        padding: 80px 10%;
+    }
+
+    .heroTitle {
+        font-size: 64px !important;
+    }
+
+    .heroSubText {
+        font-size: 18px !important;
+    }
+
+    .featuresGrid {
+        padding: 100px 10%;
+    }
+}
+
+@media (max-width: 767px) {
+    .mobileCenter {
+        text-align: center;
+    }
+
+    .mobileCenterSpace {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .heroBtn {
+        width: 100%;
+    }
+}
+
+/* Workflow Styles */
+.workflowSection {
+    padding: 80px 10%;
+    background: #fff;
+}
+
+.workflowList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.workflowItem {
+    padding: 24px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    background: transparent;
+}
+
+.workflowItem.active {
+    background: #f0f7ff;
+}
+
+.activeIndicator {
+    position: absolute;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
+    width: 4px;
+    background: #1890ff;
+    border-radius: 0 4px 4px 0;
+}
+
+.dashboardImage {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+}
+
+/* Operations Styles */
+.operationsSection {
+    padding: 100px 10%;
+    background: #fafafa;
+}
+
+.opCard {
+    border: none;
+    border-radius: 20px;
+    height: 100%;
+    text-align: left;
+}
+
+.opCard img {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+/* Integrations Styles */
+.integrationsSection {
+    padding: 100px 10%;
+    background: #fff;
+}
+
+.integrationTag {
+    padding: 8px 16px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    background: #fff;
+    border: 1px solid #f0f0f0;
+    margin: 0 !important;
+}
+
+/* Mobile Tweaks for Phase 2 */
+@media (max-width: 767px) {
+
+    .workflowSection,
+    .operationsSection,
+    .integrationsSection {
+        padding: 60px 5%;
+    }
+
+    .workflowItem {
+        padding: 16px;
+    }
+
+    .sectionHeader {
+        text-align: center;
+        margin-bottom: 32px;
+    }
+}
+
+/* Pricing */
+.pricingSection {
+    padding: 100px 10%;
+    background: #fff;
+    text-align: center;
+}
+
+.billingToggle {
+    margin: 32px 0 48px;
+    background: #f5f5f5;
+    padding: 4px;
+    border-radius: 100px;
+}
+
+.priceCard {
+    border-radius: 24px;
+    text-align: left;
+    border: 1px solid #f0f0f0;
+    padding: 12px;
+}
+
+.featuredCard {
+    border: 2px solid #1890ff;
+    transform: scale(1.05);
+    box-shadow: 0 20px 40px rgba(24, 144, 255, 0.1);
+}
+
+/* FAQ */
+.faqSection {
+    padding: 100px 20%;
+    background: #fafafa;
+}
+
+.faqCollapse {
+    background: transparent !important;
+}
+
+.faqCollapse :global(.ant-collapse-item) {
+    border-bottom: 1px solid #e8e8e8 !important;
+    margin-bottom: 8px;
+}
+
+.faqCollapse :global(.ant-collapse-header) {
+    font-weight: 600;
+    font-size: 16px;
+    padding: 24px 0 !important;
+}
+
+/* Final CTA */
+.ctaSection {
+    padding: 80px 10%;
+    background: #fff;
+}
+
+.ctaCard {
+    background: #4f46e5;
+    /* Deep Indigo from design */
+    border-radius: 32px;
+    padding: 64px;
+    overflow: hidden;
+    position: relative;
+}
+
+.whiteBtn {
+    background: #fff !important;
+    color: #4f46e5 !important;
+    border: none !important;
+    font-weight: 700;
+}
+
+.ctaImage {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Scaling */
+@media (max-width: 991px) {
+    .featuredCard {
+        transform: scale(1);
+    }
+
+    .faqSection {
+        padding: 60px 5%;
+    }
+
+    .ctaCard {
+        padding: 40px 24px;
+        text-align: center;
+    }
+
+    .pricingSection {
+        padding: 60px 5%;
+    }
+}
+
+.footerContainer {
+    padding: 80px 10% 40px;
+    background: #fff;
+    border-top: 1px solid #f0f0f0;
+}
+
+.footerBrand {
+    display: flex;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.socialIcons {
+    font-size: 20px;
+    color: #bfbfbf;
+    margin-top: 24px;
+}
+
+.socialIcons span:hover {
+    color: #1890ff;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.footerLink {
+    font-size: 14px;
+    transition: color 0.3s;
+}
+
+.footerLink:hover {
+    color: #1890ff !important;
+}
+
+.legalLinks span {
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 767px) {
+    .footerContainer {
+        padding: 60px 5% 30px;
+    }
+
+    .footerBrand {
+        justify-content: center;
+    }
+
+    .socialIcons {
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 40px;
+    }
+
+    .legalLinks {
+        width: 100%;
+        justify-content: center;
+        order: 1;
+    }
+
+    .footerContainer :global(.ant-typography) {
+        text-align: center;
+    }
+
+    .footerContainer :global(.ant-flex) {
+        align-items: center;
+    }
+}
