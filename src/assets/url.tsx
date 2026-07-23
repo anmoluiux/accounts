@@ -1,5 +1,5 @@
 // const LARAVEL_URL = "http://localhost/api/v1";
-export const LARAVEL_URL    =  process.env.NEXT_PUBLIC_LARAVEL_URL || "http://laracom.brandwik.com/api/v1";
+export const LARAVEL_URL    =  process.env.NEXT_PUBLIC_LARAVEL_URL || "https://laracom.brandwik.com/api/v1";
 export const MAIN_SITE_URL  = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "";
 
 

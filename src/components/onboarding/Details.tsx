@@ -71,39 +71,40 @@ export default function Details() {
   const [emailError, setEmailError] = useState("");
 
   const debouncedCheckEmail = useRef(
-  debounce(async (email: string) => {
-    if (!email) {
-      setIsCheckingEmail(false);
-      setIsEmailAvailable(null);
-      return;
-    }
-
-    try {
-      const res = await fetch(`${URL.CHECK_EMAIL}?email=${email}`);
-      const result = await res.json();
-
-      setIsCheckingEmail(false);
-
-      // ✅ IMPORTANT: use result.data.available
-      const available = result?.data?.available;
-
-      if (available === false) {
-        setIsEmailAvailable(false);
-        setEmailError("Email already registered");
-      } else if (available === true) {
-        setIsEmailAvailable(true);
-        setEmailError("");
-      } else {
+    debounce(async (email: string) => {
+      if (!email) {
+        setIsCheckingEmail(false);
         setIsEmailAvailable(null);
-        setEmailError("Invalid response");
+        return;
       }
-    } catch (err) {
-      setIsCheckingEmail(false);
-      setIsEmailAvailable(false);
-      setEmailError("Network error");
-    }
-  }, 500)
-).current;
+
+      try {
+        const res = await fetch(`${URL.CHECK_EMAIL}?email=${email}`);
+        const result = await res.json();
+
+        setIsCheckingEmail(false);
+
+        // ✅ IMPORTANT: use result.data.available
+        const available = result?.data?.available;
+
+        if (available === false) {
+          setIsEmailAvailable(false);
+          setEmailError("Email already registered");
+        } else if (available === true) {
+          setIsEmailAvailable(true);
+          setEmailError("");
+        } else {
+          setIsEmailAvailable(null);
+          setEmailError("Invalid response");
+        }
+      } catch (err) {
+        setIsCheckingEmail(false);
+        setIsEmailAvailable(false);
+        setEmailError("Network error");
+      }
+    }, 500)
+  ).current;
+
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
 

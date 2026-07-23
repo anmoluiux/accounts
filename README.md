@@ -36,3 +36,16 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 {nvm use 20 // to use Node.js version 20} {npx prisma dev // to start the database server} {npx prisma migrate dev --name init // to create the initial migration}
+
+
+
+export CF_Token="wITcfUEAH_QXFalQAm4MTB_8X1DEuTxZuP2DKd3Q"
+export CF_Account_ID="5531907549b88755b49ab060278fdc74"
+export CF_Zone_ID="01dc83a0912bfb15dc8467764b3ed462"
+
+/c/Users/Anmol/.acme.sh/acme.sh --issue \
+--dns dns_cf \
+-d brandwik.com \
+-d *.brandwik.com
+
+/c/Users/Anmol/.acme.sh/acme.sh --renew -d brandwik.com --force

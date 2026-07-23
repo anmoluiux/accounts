@@ -123,7 +123,7 @@ const LandingPage = () => {
                 Take control of your operations with our intuitive dashboard. Track, analyze, and optimize every aspect of your business effortlessly.
               </Paragraph>
               <Space size="middle" wrap className={styles.mobileCenterSpace}>
-                <Button type="primary" size="large" shape="round" className={styles.heroBtn}>Request a Demo</Button>
+                <Link href="/onboard" className={styles.heroLink}>Get Started</Link>
                 <Button icon={<PlayCircleOutlined />} size="large" type="text">Watch Demo</Button>
               </Space>
             </Col>

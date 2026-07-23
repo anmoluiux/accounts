@@ -63,7 +63,6 @@ export default function RootLayout({
         </Script>
         <Script src="https://t.contentsquare.net/uxa/8bccebed2b7ac.js"></Script>
 
-        {/* // Google Tag Manager (noscript) */}
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS as string} />
       </body>
     </html>
