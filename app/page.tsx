@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { Layout, Button, Row, Col, Typography, Space, Flex, Card, Badge, Drawer, Grid, Collapse, Divider } from 'antd';
+import { Layout, Button, Row, Col, Typography, Space, Flex, Card, Badge, Drawer, Collapse, Divider } from 'antd';
 import { MenuOutlined, ThunderboltOutlined, BarChartOutlined, NodeIndexOutlined, SmileOutlined, PlayCircleOutlined } from '@ant-design/icons';
 import { Segmented, Statistic, ConfigProvider } from 'antd';
 import { PlusOutlined, MinusOutlined } from '@ant-design/icons';
@@ -27,52 +27,54 @@ import {
 
 const { Header, Content } = Layout;
 const { Title, Text, Paragraph } = Typography;
-const { useBreakpoint } = Grid;
+
+// Static content and presentational helpers live at module scope. Rebuilt inside
+// the render they became new array/component identities on every state change
+// (drawer, workflow tab, billing toggle), which remounted the nav and re-rendered
+// the whole FAQ Collapse for no reason.
+const faqData = [
+  { key: '1', label: 'What kind of analytics does ShopWave provide?', children: 'ShopWave integrates seamlessly with leading tools like Slack for team communication, Shopify for online stores, and Google Analytics for performance tracking. These integrations make it easy to connect all the tools you rely on.' },
+  { key: '2', label: 'Is there a limit to the number of users?', children: 'Our Enterprise plan offers unlimited users, while Free and Pro plans have specific seat limits tailored for smaller teams.' },
+  { key: '3', label: 'How does ShopWave help with team management?', children: 'Assign roles, track individual performance metrics, and collaborate on shared dashboards in real-time.' },
+  { key: '4', label: 'Can I customize my dashboard?', children: 'Yes, our drag-and-drop interface allows you to pin the most important KPIs and hide what you don\'t need.' }
+];
+
+const footerLinks = [
+  {
+    title: 'Product',
+    links: ['Dashboard', 'Features', 'Pricing', 'Support'],
+  },
+  {
+    title: 'Resources',
+    links: ['Documentation', 'FAQs', 'Tutorial', 'Case Studies'],
+  },
+  {
+    title: 'Company',
+    links: ['About Us', 'Careers', 'Blog', 'Contact Us'],
+  },
+  {
+    title: 'Community',
+    links: ['Forum', 'Events', 'Ambassador Program', 'Partner Network'],
+  },
+];
+
+const NavLinks = () => (
+  <>
+    <Text strong className={styles.navLink}>Home</Text>
+    <Text type="secondary" className={styles.navLink}>Features</Text>
+    <Text type="secondary" className={styles.navLink}>Pricing</Text>
+    <Text type="secondary" className={styles.navLink}>Blog</Text>
+    <Text type="secondary" className={styles.navLink}>Contact</Text>
+  </>
+);
 
 const LandingPage = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [activeWorkflow, setActiveWorkflow] = useState('track');
-  const screens = useBreakpoint();
 
   const [billingCycle, setBillingCycle] = useState<'Monthly' | 'Yearly'>('Monthly');
 
-  const faqData = [
-    { key: '1', label: 'What kind of analytics does ShopWave provide?', children: 'ShopWave integrates seamlessly with leading tools like Slack for team communication, Shopify for online stores, and Google Analytics for performance tracking. These integrations make it easy to connect all the tools you rely on.' },
-    { key: '2', label: 'Is there a limit to the number of users?', children: 'Our Enterprise plan offers unlimited users, while Free and Pro plans have specific seat limits tailored for smaller teams.' },
-    { key: '3', label: 'How does ShopWave help with team management?', children: 'Assign roles, track individual performance metrics, and collaborate on shared dashboards in real-time.' },
-    { key: '4', label: 'Can I customize my dashboard?', children: 'Yes, our drag-and-drop interface allows you to pin the most important KPIs and hide what you don\'t need.' }
-  ];
-
-  const NavLinks = () => (
-    <>
-      <Text strong className={styles.navLink}>Home</Text>
-      <Text type="secondary" className={styles.navLink}>Features</Text>
-      <Text type="secondary" className={styles.navLink}>Pricing</Text>
-      <Text type="secondary" className={styles.navLink}>Blog</Text>
-      <Text type="secondary" className={styles.navLink}>Contact</Text>
-    </>
-  );
-
   const currentYear = new Date().getFullYear();
-
-  const footerLinks = [
-    {
-      title: 'Product',
-      links: ['Dashboard', 'Features', 'Pricing', 'Support'],
-    },
-    {
-      title: 'Resources',
-      links: ['Documentation', 'FAQs', 'Tutorial', 'Case Studies'],
-    },
-    {
-      title: 'Company',
-      links: ['About Us', 'Careers', 'Blog', 'Contact Us'],
-    },
-    {
-      title: 'Community',
-      links: ['Forum', 'Events', 'Ambassador Program', 'Partner Network'],
-    },
-  ];
 
   return (
     <Layout className={styles.layout}>
@@ -83,17 +85,25 @@ const LandingPage = () => {
           <span style={{ fontWeight: 800, fontSize: '20px', marginLeft: '8px' }}>ShopWave</span>
         </div>
 
-        {screens.md ? (
-          <>
-            <Space size="large"><NavLinks /></Space>
-            <Space>
-              <Button type="text">Contact Sales</Button>
-              <Button type="primary" shape="round">Sign Up</Button>
-            </Space>
-          </>
-        ) : (
-          <Button icon={<MenuOutlined />} onClick={() => setDrawerVisible(true)} />
-        )}
+        {/*
+          Responsive nav is CSS-driven, not JS-driven. useBreakpoint() reports no
+          breakpoints until it subscribes after mount, so a ternary on screens.md
+          baked the *mobile* hamburger into the static HTML and desktop visitors
+          saw it flip to the full nav on hydration.
+
+          `md:contents` keeps both <Space> elements as direct children of the
+          flex header (display:contents), so the space-between layout is
+          byte-for-byte what the ternary produced at >=768px — the same
+          breakpoint antd's `md` uses.
+        */}
+        <div className="hidden md:contents">
+          <Space size="large"><NavLinks /></Space>
+          <Space>
+            <Button type="text">Contact Sales</Button>
+            <Button type="primary" shape="round">Sign Up</Button>
+          </Space>
+        </div>
+        <Button className="md:hidden" icon={<MenuOutlined />} onClick={() => setDrawerVisible(true)} />
 
         <Drawer
           title="Menu"
@@ -404,7 +414,12 @@ const LandingPage = () => {
                 <Title level={5} style={{ marginBottom: 24, fontSize: '16px' }}>{group.title}</Title>
                 <Flex vertical gap={12}>
                   {group.links.map((link) => (
-                    <Link href={link} type="secondary" className={styles.footerLink}>
+                    // NOTE: href={link} yields a relative href like "Dashboard".
+                    // Left as-is — these need real destinations, see the report.
+                    // `type="secondary"` was dropped: it is a Typography prop and
+                    // did nothing on the anchor next/link renders (.footerLink
+                    // sets no colour, so appearance is unchanged).
+                    <Link href={link} key={link} className={styles.footerLink}>
                       {link}
                     </Link>
                   ))}

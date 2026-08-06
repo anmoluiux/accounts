@@ -1,13 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Progress, Typography, Card, Alert, List } from "antd";
-import { LoadingOutlined } from "@ant-design/icons";
-import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
-import { setStep, saveProgress, setBoardState, resetStepData } from "@/src/store/onboardingSlice";
-import { URL, MAIN_SITE_URL } from "@/src/assets/url";
-import { setBoardMerge } from "@/src/store/onboardingSlice";
 import {
+  Progress,
+  Typography,
+  Card,
   Descriptions,
   Button,
   Tooltip,
@@ -15,22 +12,16 @@ import {
   Tag,
 } from "antd";
 import {
+  LoadingOutlined,
   LinkOutlined,
   CopyOutlined,
-  EyeInvisibleOutlined,
-  EyeOutlined,
   GlobalOutlined,
   LockOutlined,
   AppstoreOutlined,
 } from "@ant-design/icons";
-
-interface Props {
-  siteName: string;
-  type: string;
-  storeLink: string;
-  adminLoginLink: string;
-  adminPassword: string;
-}
+import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
+import { saveProgress, resetStepData, setBoardMerge } from "@/src/store/onboardingSlice";
+import { URL, MAIN_SITE_URL } from "@/src/assets/url";
 
 
 const { Title, Text } = Typography;
@@ -54,7 +45,6 @@ export default function Building() {
   const [percent, setPercent] = useState(0);
   const [status, setStatus] = useState<StatusType>("PENDING");
   const [timeline, setTimeline] = useState([]);
-  const [errorMsg, setErrorMsg] = useState("");
 
   const pollInterval = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
@@ -62,15 +52,17 @@ export default function Building() {
   const userData = customer_id ? users[customer_id] : null;
   const siteId = userData?.site?.id;
   const OverallStatus = userData?.status;
-  console.log("userData", customer_id, userData);
+
   // 1. Polling Logic (Every 4 seconds)
+  // Depends on the primitive siteId/customer_id rather than the `customer` and
+  // `site` objects: object identities change whenever the store is rewritten,
+  // which would tear down and recreate this interval mid-build.
   useEffect(() => {
+    if (!siteId) return;
+
     const fetchStatus = async () => {
       try {
-        const site_id = userData?.site?.id;
-        if (!site_id) return;
-
-        const response = await fetch(`${URL.STORE_STATUS}?site_id=${site_id}`);
+        const response = await fetch(`${URL.STORE_STATUS}?site_id=${siteId}`);
         const result = await response.json();
 
         dispatch(setBoardMerge({ name: `users.${customer_id}.status`, data: result.data }));
@@ -95,7 +87,7 @@ export default function Building() {
 
     pollInterval.current = setInterval(fetchStatus, 4000);
     return () => clearInterval(pollInterval.current); // Cleanup on unmount
-  }, [userData?.customer, userData?.site]);
+  }, [siteId, customer_id, dispatch]);
 
   // 2. Visual Progress Increments (Every 2 seconds)
   useEffect(() => {

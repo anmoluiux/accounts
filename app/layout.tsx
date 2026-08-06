@@ -4,7 +4,6 @@ import "./globals.css";
 import ReduxProvider from "@/src/store/ReduxProvider";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { GoogleAnalytics } from '@next/third-parties/google';
-import mixpanel from "mixpanel-browser"
 import Script from "next/script";
 import AnalyticsMixpanel from "@/src/components/analytics/mixpanel";
 

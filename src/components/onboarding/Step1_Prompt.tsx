@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Input, Button, Select, Typography, Card, Form, Space } from "antd";
+import { useState, useEffect, useRef } from "react";
+import { Input, Button, Select, Typography, Card, Space } from "antd";
 import { ArrowRightOutlined, ThunderboltFilled, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
 import { saveProgress, setStep, updateFormData } from "@/src/store/onboardingSlice";
@@ -10,6 +10,23 @@ import { URL, MAIN_SITE_URL } from "@/src/assets/url";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
+
+const options = [
+  { value: "online_store", label: "Online Store" },
+  { value: "blog", label: "Blog" },
+  { value: "portfolio", label: "Portfolio" },
+  { value: "restaurant", label: "Restaurant / Food" },
+];
+
+// Declared at module scope on purpose. Defined inside the component it would be
+// a brand-new component type every render, so React would unmount and remount
+// the suffix node on every keystroke instead of just updating the icon.
+const StatusSuffix = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => {
+  if (isChecking) return <LoadingOutlined />;
+  if (isAvailable === true) return <CheckCircleFilled className="text-green-500" />;
+  if (isAvailable === false) return <CloseCircleFilled className="text-red-500" />;
+  return <span style={{ width: 16, display: "inline-block" }} />; // placeholder
+};
 
 export default function Step1_Prompt() {
   const dispatch = useAppDispatch();
@@ -25,6 +42,10 @@ export default function Step1_Prompt() {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
+  // Submit State
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
   // Debounced Validation Function
   // We use useCallback so the debounce function doesn't get recreated on every render
   const debouncedCheckAvailability = useRef(
@@ -36,9 +57,8 @@ export default function Step1_Prompt() {
       }
 
       try {
-        const res = await fetch(`${URL.CHECK_SUBDOMAIN}?subdomain=${val}`);
+        const res = await fetch(`${URL.CHECK_SUBDOMAIN}?subdomain=${encodeURIComponent(val)}`);
         const data = await res.json().then((res) => res.data);
-        console.log("API Response:", data)
         setIsChecking(false);
 
         if (data.error) {
@@ -75,17 +95,25 @@ export default function Step1_Prompt() {
   };
 
   const handleNext = async () => {
-    if (!subdomain || !isAvailable || !businessName) return;
+    if (!subdomain || !isAvailable || !businessName || isSaving) return;
 
     // 1. Save Lead Data to Redux
     dispatch(updateFormData({ siteName: subdomain, businessName: businessName, siteType: type }));
 
     // 2. Trigger Save for API
+    //
+    // The await matters: without it the try/catch could never fire (a failed
+    // save became a silent unhandled rejection) and step 1 was reached before
+    // lead_id existed, so /onboard/register could be called with lead_id: null.
+    setIsSaving(true);
+    setSaveError("");
     try {
-      dispatch(saveProgress()).unwrap();
+      await dispatch(saveProgress()).unwrap();
       dispatch(setStep(1));
-    } catch (error) {
-      console.error("Failed to save:", error);
+    } catch (error: any) {
+      setSaveError(typeof error === "string" ? error : error?.message || "Couldn't save your details. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -94,20 +122,6 @@ export default function Step1_Prompt() {
       debouncedCheckAvailability.cancel();
     };
   }, [debouncedCheckAvailability]);
-
-  const options = [
-    { value: "online_store", label: "Online Store" },
-    { value: "blog", label: "Blog" },
-    { value: "portfolio", label: "Portfolio" },
-    { value: "restaurant", label: "Restaurant / Food" },
-  ];
-
-  const StatusSuffix = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => {
-    if (isChecking) return <LoadingOutlined />;
-    if (isAvailable === true) return <CheckCircleFilled className="text-green-500" />;
-    if (isAvailable === false) return <CloseCircleFilled className="text-red-500" />;
-    return <span style={{ width: 16, display: "inline-block" }} />; // placeholder
-  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] w-full max-w-2xl mx-auto px-4 animate-fadeIn">
@@ -176,12 +190,18 @@ export default function Step1_Prompt() {
             </Select>
           </div>
 
+          {saveError && (
+            <div className="text-red-500 text-sm -mb-2" role="alert">
+              {saveError}
+            </div>
+          )}
+
           <Button
             type="primary"
             size="large"
             onClick={handleNext}
-            loading={isChecking}
-            disabled={!subdomain || !businessName || isAvailable !== true}
+            loading={isChecking || isSaving}
+            disabled={!subdomain || !businessName || isAvailable !== true || isSaving}
             className="h-12 text-lg font-semibold bg-black hover:bg-gray-800 mt-2 rounded-lg"
             icon={<ArrowRightOutlined />}
             iconPlacement="end">

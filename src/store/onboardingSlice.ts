@@ -1,7 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import { URL } from "@/src/assets/url";
 
-var _ = require("lodash");
+// Deep imports: pulling the lodash monolith in here put ~100 KB of unused
+// helpers into the shared chunk loaded by every route.
+import set from "lodash/set";
+import get from "lodash/get";
+import isPlainObject from "lodash/isPlainObject";
 
 // 1. Define the State Interface
 interface OnboardingState {
@@ -74,7 +78,6 @@ export const saveProgress = createAsyncThunk("onboarding/saveProgress", async (_
 
     const result = await res.json();
 
-    console.log("RESSULT >>>>>", result);
     // 3. Handle the new standardized "envelope" { status, data, message }
     if (!res.ok || result.status === 'error') {
       throw new Error(result.message || "Failed to save progress");
@@ -128,7 +131,7 @@ export const onboardingSlice = createSlice({
     },
     setBoardState: (state, action) => {
       const { name, data } = action.payload;
-      _.set(state, name, data);
+      set(state, name, data);
     },
     setBoardMerge: (state, action) => {
       const { name, data } = action.payload;
@@ -136,11 +139,11 @@ export const onboardingSlice = createSlice({
       if (!name.includes(".")) {
         (state as any)[name] = (state as any)[name] ? { ...(state as any)[name], ...data } : { ...data };
       } else {
-        const existingValue = _.get(state, name);
-        if (_.isPlainObject(existingValue) && _.isPlainObject(data)) {
-          _.set(state, name, { ...existingValue, ...data });
+        const existingValue = get(state, name);
+        if (isPlainObject(existingValue) && isPlainObject(data)) {
+          set(state, name, { ...existingValue, ...data });
         } else {
-          _.set(state, name, data);
+          set(state, name, data);
         }
       }
     },
@@ -162,9 +165,10 @@ export const onboardingSlice = createSlice({
       })
       .addCase(saveProgress.fulfilled, (state, action) => {
         state.isLoading = false;
-        console.log("action.payload >>>>>", action.payload)
-        // If the API returned a new lead_id (on first creation), save it
-        if (action.payload.lead_id) {
+        // If the API returned a new lead_id (on first creation), save it.
+        // Optional chaining: a 200 with an empty `data` would otherwise throw
+        // inside the reducer and take the whole dispatch down.
+        if (action.payload?.lead_id) {
           state.lead_id = action.payload.lead_id;
         }
       })

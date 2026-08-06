@@ -1,34 +1,27 @@
 "use client";
-import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
+import { useAppSelector } from "@/src/lib/hooks";
 import Step1_Prompt from "@/src/components/onboarding/Step1_Prompt";
-import Step2_Vibe from "@/src/components/onboarding/Step2_Vibe";
 import Details from "@/src/components/onboarding/Details";
-import Building from "@/src/components/onboarding/Building"; // Import
-import Step5_Reveal from "@/src/components/onboarding/Step5_Reveal"; // Import
-import UserCredentials from "@/src/components/onboarding/userCredentials"; // Import
+import UserCredentials from "@/src/components/onboarding/userCredentials";
+import PersistBoundary from "@/src/store/PersistBoundary";
+
+// Step2_Vibe / Building / Step5_Reveal still exist on disk but are not rendered.
+// They were imported here, which kept all three (plus Building's hardcoded
+// localhost API URL) in the shipped bundle. Re-add the import to re-enable one.
 
 import { Steps } from "antd";
-import { updateFormData, setStep, saveProgress } from "@/src/store/onboardingSlice";
 
-export default function OnboardingPage() {
+function OnboardingFunnel() {
   const currentStep = useAppSelector((state) => state.onboarding.currentStep);
 
   // Hide the progress stepper on the final Reveal step for immersion
   // const showStepper = currentStep < 4;
   const showStepper = false;
 
-  const dispatch = useAppDispatch();
-  const SetStepCustom = (step: number) => () => {
-    dispatch(setStep(step));
-  };
-
-  console.log(currentStep);
-
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
       <header className="px-8 py-6 flex justify-between items-center">
         <div className="font-bold text-xl tracking-tight">logo.</div>
-        <button onClick={SetStepCustom(0)}>SetStep</button>
 
         {showStepper && (
           <div className="w-1/3 hidden md:block">
@@ -57,5 +50,16 @@ export default function OnboardingPage() {
         {currentStep === 4 && <Step5_Reveal />} */}
       </div>
     </main>
+  );
+}
+
+// The funnel reads persisted state to decide which step to show, so it stays
+// behind the rehydration gate. Keeping the gate here rather than in the root
+// layout is what lets the marketing page prerender.
+export default function OnboardingPage() {
+  return (
+    <PersistBoundary>
+      <OnboardingFunnel />
+    </PersistBoundary>
   );
 }
