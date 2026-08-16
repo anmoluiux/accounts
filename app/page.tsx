@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import LandingPage from "@/src/components/landing/LandingPage";
-import { OG_IMAGE, SITE, ogImage } from "@/src/lib/seo/config";
+import { OG_IMAGE, SITE, pageSocial } from "@/src/lib/seo/config";
 
 /**
  * A server component wrapping the client landing page.
@@ -12,9 +12,17 @@ import { OG_IMAGE, SITE, ogImage } from "@/src/lib/seo/config";
  * "Accounts — SaaS Platform for Account Management" with no image at all.
  */
 export const metadata: Metadata = {
-  title: SITE.tagline,
+  /**
+   * No `title` here on purpose, so the root layout's `title.default`
+   * ("Brandwik — Create your online store") applies.
+   *
+   * A title set on *this* file would render bare. `title.template` only
+   * decorates titles from **child** route segments, and `app/page.tsx` shares
+   * the root segment with `app/layout.tsx` — so `title: "Create your online
+   * store"` here produced exactly that, with the brand missing from the
+   * homepage tab and from search.
+   */
   description: SITE.description,
-  alternates: { canonical: "/" },
 
   /**
    * ⚠️ `noindex` is deliberate — remove it only together with the content.
@@ -39,20 +47,13 @@ export const metadata: Metadata = {
    */
   robots: { index: false, follow: true },
 
-  openGraph: {
-    type: "website",
-    url: "/",
-    siteName: SITE.name,
-    title: `${SITE.name} — ${SITE.tagline}`,
+  ...pageSocial({
+    path: "/",
+    titleFull: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
-    images: ogImage(OG_IMAGE.default, `${SITE.name} — ${SITE.tagline}`),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${SITE.name} — ${SITE.tagline}`,
-    description: SITE.description,
-    images: ogImage(OG_IMAGE.default, `${SITE.name} — ${SITE.tagline}`),
-  },
+    image: OG_IMAGE.default,
+    imageAlt: `${SITE.name} — ${SITE.tagline}`,
+  }),
 };
 
 export default function Page() {

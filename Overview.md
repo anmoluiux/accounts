@@ -352,7 +352,8 @@ npm run lint     # eslint
 
 ### Exported routes (from `out/`)
 
-`/`, `/onboard/`, `/_not-found/`, `/404.html`
+`/`, `/onboard/`, `/login/`, `/_not-found/`, `/404.html`,
+plus `/robots.txt`, `/sitemap.xml`, `/manifest.webmanifest`
 
 ### Environment variables (`.env`, gitignored)
 
@@ -362,6 +363,47 @@ npm run lint     # eslint
 | `NEXT_PUBLIC_LARAVEL_URL` | `src/assets/url.tsx` | Falls back to `https://laracom.brandwik.com/api/v1` |
 | `NEXT_PUBLIC_MAIN_SITE_URL` | `url.tsx`, `Step1_Prompt`, `userCredentials` | Falls back to `""` — if unset, the subdomain suffix renders as a bare `"."` |
 | `NEXT_PUBLIC_GOOGLE_ANALYTICS` | `app/layout.tsx` | Passed to `<GoogleAnalytics gaId>` |
+| `NEXT_PUBLIC_SITE_URL` | `src/lib/seo/config.ts` | Public origin, `https://accounts.brandwik.com`. Becomes `metadataBase` — every absolute `og:image`, canonical and sitemap URL is built from it. Wrong value ⇒ every social preview 404s its image and renders as a bare link |
+
+---
+
+## 8b. SEO and social previews
+
+Source of truth is **`src/lib/seo/config.ts`** (`SITE`, `ABS`, `OG_IMAGE`, `pageSocial`).
+It mirrors `bravo/src/lib/seo/config.ts`; the two sites are one brand and their
+structured data has to agree.
+
+| Piece | Where |
+|---|---|
+| Site-wide defaults, `metadataBase`, title template, icons, robots | `app/layout.tsx` |
+| Per-page title / description / canonical / social | each `page.tsx`, via `pageSocial()` |
+| JSON-LD (`Organization`, `WebPage`, `BreadcrumbList`) | `src/lib/seo/schema.ts` + `src/components/seo/JsonLd.tsx` |
+| `robots.txt`, `sitemap.xml`, `manifest.webmanifest` | `app/robots.ts`, `app/sitemap.ts`, `app/manifest.ts` |
+| OG cards + favicons (committed PNGs in `public/`) | `npm run brand:assets` → `scripts/generate-brand-assets.mjs` |
+
+Four things here are load-bearing and easy to undo by accident:
+
+1. **Social images are committed `.png` files, not `opengraph-image.tsx`.**
+   The metadata-image convention works under `output: 'export'` but emits an
+   *extensionless* file (`/onboard/opengraph-image-5a60y9`), which a static host
+   serves as `application/octet-stream`. Every scraper — WhatsApp, Facebook, X,
+   LinkedIn, Slack, iMessage — drops an `og:image` that is not `image/*`, so the
+   preview collapses to a bare link. Same reason icons are declared explicitly
+   instead of via `app/icon.*`.
+2. **`metadataBase` must be the real origin.** See `NEXT_PUBLIC_SITE_URL` above.
+3. **Canonicals carry the trailing slash** (`/onboard/`), because
+   `trailingSlash: true` makes that the URL that actually serves.
+4. **Page-level `openGraph`/`twitter` replace the root's wholesale** — Next
+   merges metadata shallowly. That is why every page goes through `pageSocial()`
+   rather than hand-writing the block; hand-writing it silently dropped
+   `og:locale`, `og:site_name`, `twitter:site` and `twitter:creator`.
+
+`/` is `noindex, follow` on purpose — it still carries the placeholder "ShopWave"
+copy and duplicates bravo. See the comment in `app/page.tsx` before changing it.
+
+No `AggregateRating`/`Review` markup is emitted anywhere: the testimonials in
+`showcase.data.ts` are still placeholders, and marking up invented ratings risks
+a manual action against the whole brandwik.com domain.
 
 Two commented-out `DATABASE_URL` variants and a commented `NEXT_PUBLIC_LARAVEL_URL` sit alongside,
 recording the local-dev alternatives.

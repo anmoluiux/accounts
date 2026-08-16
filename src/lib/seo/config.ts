@@ -136,3 +136,60 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
  * correct 1200×630 image can still render as a cramped thumbnail.
  */
 export const ogImage = (src: string, alt: string) => [{ url: src, ...OG_SIZE, alt, type: "image/png" }];
+
+/**
+ * The per-page social + canonical block.
+ *
+ * Exists because Next merges metadata **shallowly**: a page that declares its
+ * own `openGraph` replaces the root layout's object wholesale rather than
+ * merging into it. Hand-writing the block on each page silently dropped
+ * `og:locale`, `og:site_name`, `twitter:site` and `twitter:creator` from every
+ * route — each one individually easy to miss in review, because the tags that
+ * *were* written looked complete.
+ *
+ * Routing every page through one builder means a field added here appears
+ * everywhere, and no page can be accidentally short.
+ *
+ * @param path       Route path **with the trailing slash** (`/onboard/`).
+ *                   `trailingSlash: true` makes that the real URL, and the
+ *                   canonical has to name the URL that actually serves.
+ * @param titleFull  What social cards show. Distinct from the `<title>`, which
+ *                   the root layout's template suffixes — a card has no
+ *                   surrounding browser chrome to supply the brand, so it
+ *                   carries the brand itself.
+ */
+export function pageSocial({
+  path,
+  titleFull,
+  description,
+  image,
+  imageAlt,
+}: {
+  path: string;
+  titleFull: string;
+  description: string;
+  image: string;
+  imageAlt: string;
+}) {
+  const images = ogImage(image, imageAlt);
+  return {
+    alternates: { canonical: path },
+    openGraph: {
+      type: "website" as const,
+      url: path,
+      siteName: SITE.name,
+      locale: SITE.locale,
+      title: titleFull,
+      description,
+      images,
+    },
+    twitter: {
+      card: "summary_large_image" as const,
+      site: SITE.twitter,
+      creator: SITE.twitter,
+      title: titleFull,
+      description,
+      images,
+    },
+  };
+}

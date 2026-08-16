@@ -3,7 +3,7 @@ import PersistBoundary from "@/src/store/PersistBoundary";
 import FormSkeleton from "@/src/components/onboarding/shell/FormSkeleton";
 import OnboardingFunnel from "@/src/components/onboarding/OnboardingFunnel";
 import { JsonLd } from "@/src/components/seo/JsonLd";
-import { ABS, OG_IMAGE, SITE, ogImage } from "@/src/lib/seo/config";
+import { ABS, OG_IMAGE, SITE, pageSocial } from "@/src/lib/seo/config";
 import { breadcrumbSchema, webPageSchema } from "@/src/lib/seo/schema";
 
 const TITLE = "Create your store";
@@ -23,21 +23,13 @@ const DESCRIPTION =
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: "/onboard/" },
-  openGraph: {
-    type: "website",
-    url: "/onboard/",
-    siteName: SITE.name,
-    title: `${TITLE} — ${SITE.name}`,
+  ...pageSocial({
+    path: "/onboard/",
+    titleFull: `${TITLE} — ${SITE.name}`,
     description: DESCRIPTION,
-    images: ogImage(OG_IMAGE.onboard, "Create your online store with Brandwik — three steps to a live storefront"),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${TITLE} — ${SITE.name}`,
-    description: DESCRIPTION,
-    images: ogImage(OG_IMAGE.onboard, "Create your online store with Brandwik — three steps to a live storefront"),
-  },
+    image: OG_IMAGE.onboard,
+    imageAlt: "Create your online store with Brandwik — three steps to a live storefront",
+  }),
 };
 
 /**

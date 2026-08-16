@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import LoginForm from "@/src/components/auth/LoginForm";
 import { JsonLd } from "@/src/components/seo/JsonLd";
-import { ABS, OG_IMAGE, SITE, ogImage } from "@/src/lib/seo/config";
+import { ABS, OG_IMAGE, SITE, pageSocial } from "@/src/lib/seo/config";
 import { breadcrumbSchema, webPageSchema } from "@/src/lib/seo/schema";
 
 const TITLE = "Sign in";
@@ -26,21 +26,13 @@ const DESCRIPTION = "Sign in to your Brandwik account to manage your storefront,
 export const metadata: Metadata = {
   title: TITLE,
   description: DESCRIPTION,
-  alternates: { canonical: "/login/" },
-  openGraph: {
-    type: "website",
-    url: "/login/",
-    siteName: SITE.name,
-    title: `${TITLE} — ${SITE.name}`,
+  ...pageSocial({
+    path: "/login/",
+    titleFull: `${TITLE} — ${SITE.name}`,
     description: DESCRIPTION,
-    images: ogImage(OG_IMAGE.default, `${SITE.name} — ${SITE.tagline}`),
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${TITLE} — ${SITE.name}`,
-    description: DESCRIPTION,
-    images: ogImage(OG_IMAGE.default, `${SITE.name} — ${SITE.tagline}`),
-  },
+    image: OG_IMAGE.default,
+    imageAlt: `${SITE.name} — ${SITE.tagline}`,
+  }),
 };
 
 /**
