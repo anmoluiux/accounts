@@ -25,7 +25,7 @@ import { PROOF } from "./showcase.data";
  *
  * Content comes from `showcase.data.ts` — the quotes there are placeholders.
  */
-export default function ShowcasePanel() {
+export default function ShowcasePanel({ lockedScene }: { lockedScene?: number }) {
   return (
     <aside className={styles.panel} aria-label="About Brandwik">
       <div className={styles.panelInner}>
@@ -38,6 +38,7 @@ export default function ShowcasePanel() {
           {/* Index matches `onboarding.currentStep`, same as the body below. */}
           <SceneSwitch
             className={styles.headlineStage}
+            lockedScene={lockedScene}
             scenes={[
               <h1 key="0" className={styles.headline}>
                 Your store, live before your{" "}
@@ -53,6 +54,7 @@ export default function ShowcasePanel() {
 
         <SceneSwitch
           className={styles.bodyStage}
+          lockedScene={lockedScene}
           scenes={[<ThemesScene key="0" />, <IncludedScene key="1" />, <LaunchScene key="2" />]}
         />
       </div>

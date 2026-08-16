@@ -26,9 +26,14 @@ import styles from "./Showcase.module.css";
 export default function SceneSwitch({
   scenes,
   className,
+  lockedScene,
 }: {
   scenes: React.ReactNode[];
   className?: string;
+  /** Pin to one scene and ignore the funnel step. The login route uses this:
+   *  a visitor who abandoned at step 3 must not be greeted by "We're putting it
+   *  together" when they come back to sign in. */
+  lockedScene?: number;
 }) {
   const rehydrated = useRehydrated();
   const currentStep = useAppSelector((state) => state.onboarding.currentStep);
@@ -36,7 +41,8 @@ export default function SceneSwitch({
   // Scene 0 until localStorage is read — right for a new visitor, and what the
   // static HTML already contains. A returning visitor sees one cross-fade to
   // their real scene as rehydration lands.
-  const activeIndex = rehydrated ? Math.min(Math.max(currentStep, 0), scenes.length - 1) : 0;
+  const fromStore = rehydrated ? Math.min(Math.max(currentStep, 0), scenes.length - 1) : 0;
+  const activeIndex = lockedScene ?? fromStore;
 
   return (
     <div className={className ? `${styles.stage} ${className}` : styles.stage}>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Input, Button, Select, Alert } from "antd";
 import { ArrowRightOutlined, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
@@ -240,6 +241,12 @@ export default function Step1_Prompt() {
           Continue
         </Button>
       </div>
+
+      {/* Only on step 0 by virtue of living here — once someone is mid-funnel,
+          offering them the sign-in door is noise. */}
+      <p className={styles.altAction}>
+        Already have a store? <Link href="/login">Sign in</Link>
+      </p>
     </div>
   );
 }

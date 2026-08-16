@@ -8,8 +8,19 @@ export const MAIN_SITE_URL  = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "";
 export const MARKETING_URL  = process.env.NEXT_PUBLIC_MARKETING_URL || "https://brandwik.com";
 
 
+// ⚠️ NEITHER LOGIN ENDPOINT EXISTS IN LARACOM YET (checked against
+// laracom/routes/api.php). Sanctum is installed but the only `auth:sanctum`
+// group is for affiliates, and no route issues a customer token. The login
+// screen posts to these names so it works the moment they land; until then it
+// surfaces a clear "not available yet" error rather than failing silently.
+//
+// To make it work, laracom needs:
+//   POST /customer/login       { email, password }  -> { token, redirect_url }
+//   POST /customer/magic-link  { email }            -> 202, emails a signed link
 export const URL = {
     LARAVEL_URL,
+    LOGIN: `${LARAVEL_URL}/customer/login`,
+    MAGIC_LINK: `${LARAVEL_URL}/customer/magic-link`,
     CHECK_EMAIL: `${LARAVEL_URL}/onboard/check-email`,
     CHECK_SUBDOMAIN: `${LARAVEL_URL}/onboard/check-subdomain`,
     ONBOARD_LEAD: `${LARAVEL_URL}/onboard/lead`,

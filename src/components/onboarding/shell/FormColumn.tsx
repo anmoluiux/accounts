@@ -19,18 +19,33 @@ import styles from "../onboard.module.css";
  * localStorage was read; now the showcase panel and this chrome paint first and
  * only the form itself waits.
  */
-export default function FormColumn({ children }: { children: React.ReactNode }) {
+export default function FormColumn({
+  children,
+  showStepHeader = true,
+  gateOnRehydration = true,
+}: {
+  children: React.ReactNode;
+  /** The login route has no steps, so no counter. */
+  showStepHeader?: boolean;
+  /** Only the funnel reads persisted state. Login does not, so it should not
+   *  flash a skeleton waiting for redux-persist it will never consult. */
+  gateOnRehydration?: boolean;
+}) {
   return (
     <main className={styles.formColumn}>
       <div className={styles.formInner}>
-        {/* Renders null on step 0 — the visibility rule lives in the component,
-            not here, so `.formInner`'s flex gap collapses with it and step 0
-            gets no phantom space where the counter would be. */}
-        <FormHeader />
+        {/* Renders null on step 0 too — that rule lives in the component, not
+            here, so `.formInner`'s flex gap collapses with it and step 0 gets
+            no phantom space where the counter would be. */}
+        {showStepHeader && <FormHeader />}
 
         <div className={styles.formBody}>
           <OnboardTheme>
-            <PersistBoundary fallback={<FormSkeleton />}>{children}</PersistBoundary>
+            {gateOnRehydration ? (
+              <PersistBoundary fallback={<FormSkeleton />}>{children}</PersistBoundary>
+            ) : (
+              children
+            )}
           </OnboardTheme>
         </div>
       </div>
