@@ -22,9 +22,10 @@ import {
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
 import { saveProgress, resetStepData, setBoardMerge } from "@/src/store/onboardingSlice";
 import { URL, MAIN_SITE_URL } from "@/src/assets/url";
+import styles from "./onboard.module.css";
 
 
-const { Title, Text } = Typography;
+const { Text } = Typography;
 
 // Mapping API status to Progress %
 const STATUS_MAP = {
@@ -132,26 +133,34 @@ export default function Building() {
   const adminLoginLink = `https://${userData?.site.subdomain}.${MAIN_SITE_URL}/admin`;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 w-full max-w-2xl mx-auto px-4">
-      <div className="mb-8 text-center">
-        <LoadingOutlined className="text-4xl text-blue-600 mb-4" spin={status !== "COMPLETED"} />
-        <Title level={3}>Building your store...</Title>
-        <Text type="secondary">Current Status: <strong>{status}</strong></Text>
+    <div>
+      <div className={styles.stepHead}>
+        <span className={styles.stepEyebrow}>
+          <LoadingOutlined spin={status !== "COMPLETED"} style={{ fontSize: 12 }} />
+          {status === "COMPLETED" ? "Ready" : "Building"}
+        </span>
+        <h2 className={styles.stepTitle}>
+          {status === "COMPLETED" ? "Your store is live." : "We're building your store."}
+        </h2>
+        <p className={styles.stepSubtitle}>
+          {status === "COMPLETED"
+            ? "Everything below is yours. Keep these details somewhere safe."
+            : "This usually takes a couple of minutes. You can leave this page open."}
+        </p>
       </div>
 
-      <Card className="w-full mb-6">
-        <Progress
-          percent={percent}
-          status={status === "FAILED" ? "exception" : "active"}
-          strokeColor={{ '0%': '#108ee9', '100%': '#87d068' }}
-        />
-      </Card>
-
-      <Button onClick={clearLead}>Create New</Button>
+      <Progress
+        percent={percent}
+        status={status === "FAILED" ? "exception" : "active"}
+        strokeColor={{ "0%": "#2e4b3a", "100%": "#4fa97a" }}
+      />
+      <div className={styles.hint} style={{ marginTop: 6 }}>
+        Current status: <strong>{status}</strong>
+      </div>
 
       {/* Timeline Logs (Optional) */}
       {OverallStatus?.status === "COMPLETED" &&
-        <Card title="Site Details" size="small" className="w-full overflow-y-auto">
+        <Card title="Store details" size="small" style={{ marginTop: 24 }}>
 
           <Descriptions
             column={1}
@@ -283,6 +292,12 @@ export default function Building() {
         /> */}
         </Card>
       }
+
+      {/* Escape hatch, demoted: it wipes the lead and restarts the funnel, so it
+          no longer sits under the progress bar looking like the primary action. */}
+      <button type="button" className={styles.backLink} style={{ marginTop: 24 }} onClick={clearLead}>
+        Start over with a different store
+      </button>
     </div>
   );
 }

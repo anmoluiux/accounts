@@ -1,15 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Input, Button, Select, Typography, Card, Space } from "antd";
-import { ArrowRightOutlined, ThunderboltFilled, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
+import { Input, Button, Select, Alert } from "antd";
+import { ArrowRightOutlined, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
 import { saveProgress, setStep, updateFormData } from "@/src/store/onboardingSlice";
 import debounce from "lodash/debounce";
 import { URL, MAIN_SITE_URL } from "@/src/assets/url";
-
-const { Title, Text } = Typography;
-const { Option } = Select;
+import styles from "./onboard.module.css";
 
 const options = [
   { value: "online_store", label: "Online Store" },
@@ -21,12 +19,24 @@ const options = [
 // Declared at module scope on purpose. Defined inside the component it would be
 // a brand-new component type every render, so React would unmount and remount
 // the suffix node on every keystroke instead of just updating the icon.
-const StatusSuffix = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => {
-  if (isChecking) return <LoadingOutlined />;
-  if (isAvailable === true) return <CheckCircleFilled className="text-green-500" />;
-  if (isAvailable === false) return <CloseCircleFilled className="text-red-500" />;
+const StatusIcon = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => {
+  if (isChecking) return <LoadingOutlined style={{ color: "var(--bw-ink-faint)" }} />;
+  if (isAvailable === true) return <CheckCircleFilled style={{ color: "var(--bw-mint)" }} />;
+  if (isAvailable === false) return <CloseCircleFilled style={{ color: "var(--bw-danger)" }} />;
   return <span style={{ width: 16, display: "inline-block" }} />; // placeholder
 };
+
+// The domain tail rides inside the input's own border rather than in `addonAfter`
+// (deprecated in antd 6, which points at Space.Compact) or a second read-only
+// Input. Both alternatives add a node the user can focus and select that isn't
+// really a field; as a suffix it is inert text sharing the real input's border,
+// so there is nothing to fake and nothing to tab into.
+const AddressSuffix = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => (
+  <span className={styles.addressSuffix}>
+    {MAIN_SITE_URL && <span className={styles.domainTail}>.{MAIN_SITE_URL}</span>}
+    <StatusIcon isChecking={isChecking} isAvailable={isAvailable} />
+  </span>
+);
 
 export default function Step1_Prompt() {
   const dispatch = useAppDispatch();
@@ -46,37 +56,43 @@ export default function Step1_Prompt() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  // Debounced Validation Function
-  // We use useCallback so the debounce function doesn't get recreated on every render
-  const debouncedCheckAvailability = useRef(
-    debounce(async (val: string) => {
-      if (!val || val.length < 3) {
-        setIsChecking(false);
-        setIsAvailable(null);
+  // The availability probe itself, kept separate from the debounced wrapper so
+  // it can also be called directly on mount. It only touches state setters,
+  // which are stable, so holding it in a ref is safe.
+  const checkAvailability = useRef(async (val: string) => {
+    if (!val || val.length < 3) {
+      setIsChecking(false);
+      setIsAvailable(null);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${URL.CHECK_SUBDOMAIN}?subdomain=${encodeURIComponent(val)}`);
+      const body = await res.json();
+      setIsChecking(false);
+
+      // Laravel's error envelope is { status, message, errors } with no `data`
+      // key at all, so reading `body.data.error` threw a TypeError and the
+      // catch below reported every rejection as "Network error". Read the
+      // status off the envelope instead and surface the real message.
+      if (body?.status === "error" || !body?.data) {
+        setIsAvailable(false);
+        setErrorMsg(body?.message || "Couldn't check that address");
         return;
       }
 
-      try {
-        const res = await fetch(`${URL.CHECK_SUBDOMAIN}?subdomain=${encodeURIComponent(val)}`);
-        const data = await res.json().then((res) => res.data);
-        setIsChecking(false);
+      setIsAvailable(body.data.available);
+      setErrorMsg(body.data.available ? "" : "Already taken");
+    } catch {
+      setIsChecking(false);
+      setIsAvailable(false);
+      setErrorMsg("Network error");
+    }
+  }).current;
 
-        if (data.error) {
-          setIsAvailable(false);
-          setErrorMsg(data.error);
-        } else {
-          setIsAvailable(data.available);
-          setErrorMsg(data.available ? "" : "Already taken");
-        }
-      } catch {
-        setIsChecking(false);
-        setIsAvailable(false);
-        setErrorMsg("Network error");
-      }
-    }, 500),
-  ).current;
-
-
+  // Debounced Validation Function
+  // We use useCallback so the debounce function doesn't get recreated on every render
+  const debouncedCheckAvailability = useRef(debounce((val: string) => checkAvailability(val), 500)).current;
 
   // Handle Subdomain Input
   const handleSubdomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,98 +133,118 @@ export default function Step1_Prompt() {
     }
   };
 
+  // Step 0 is unmounted whenever the funnel advances (page.tsx renders it behind
+  // `currentStep === 0`), so pressing Back remounts it with subdomain restored
+  // from persisted Redux but isAvailable reset to null — which left "Start
+  // Building" disabled until the user retyped the address. Re-probe once on
+  // mount so a returning user finds the form exactly as they left it. This also
+  // re-confirms the name is still free, since nothing reserves it until
+  // /onboard/register runs.
+  useEffect(() => {
+    const saved = savedData.siteName;
+
+    if (saved && saved.length >= 3) {
+      setIsChecking(true);
+      checkAvailability(saved);
+    }
+    // Mount only: this seeds state that the user's own typing then owns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     return () => {
       debouncedCheckAvailability.cancel();
     };
   }, [debouncedCheckAvailability]);
 
+  const canSubmit = Boolean(subdomain) && Boolean(businessName) && isAvailable === true && !isSaving;
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] w-full max-w-2xl mx-auto px-4 animate-fadeIn">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 text-blue-600 mb-4 animate-pulse">
-          <ThunderboltFilled style={{ fontSize: "24px" }} />
-        </div>
-        <Title level={2} style={{ margin: 0 }}>
-          Let's name your dream store.
-        </Title>
-        <Text type="secondary" className="text-lg mt-2 block">
-          Choose a unique address and tell us your brand name.
-        </Text>
+    <div>
+      <div className={styles.stepHead}>
+        <span className={styles.stepEyebrow}>
+          <SparkIcon />
+          Takes about 2 minutes
+        </span>
+        <h2 className={styles.stepTitle}>Let&apos;s name your store.</h2>
+        <p className={styles.stepSubtitle}>
+          Your brand name is what customers see. The address is where they find you — you can point
+          a custom domain at it later.
+        </p>
       </div>
 
-      <Card className="w-full shadow-xl border-0 rounded-2xl overflow-hidden">
-        <div className="flex flex-col gap-6 p-6">
-          {/* 1. Business Name (Simple) */}
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Brand Name</label>
-            <Input size="large" placeholder="e.g. Kicks On Fire" value={businessName} onChange={(e) => setBusinessName(e.target.value)} className="rounded-lg" />
-          </div>
-
-          {/* 2. Subdomain (Complex Validation) */}
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Store Address {errorMsg && <span className="text-red-500 normal-case ml-2">- {errorMsg}</span>}</label>
-
-            <Space.Compact style={{ width: "100%" }}>
-              {/* Subdomain input */}
-              <Input
-                size="large"
-                placeholder="toyscitys"
-                value={subdomain}
-                onChange={handleSubdomainChange}
-                className="rounded-l-lg"
-                suffix={<StatusSuffix isChecking={isChecking} isAvailable={isAvailable} />}
-                status={isAvailable === false ? "error" : ""}
-              />
-
-              {/* Domain suffix */}
-              <Input
-                size="large"
-                value={'.'+MAIN_SITE_URL}
-                readOnly
-                className="rounded-r-lg border-l-0 bg-white text-gray-500"
-                style={{
-                  width: 300,
-                  pointerEvents: "none", // feels like text, not input
-                }}
-              />
-            </Space.Compact>
-
-            <div className="text-xs text-gray-400 mt-1 pl-1">This will be your temporary URL. You can add a custom domain later.</div>
-          </div>
-
-          {/* 3. Type Selection */}
-          <div>
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Business Type</label>
-            <Select size="large" value={type} onChange={setType} className="w-full rounded-lg">
-              {options.map((opt) => (
-                <Option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </Option>
-              ))}
-            </Select>
-          </div>
-
-          {saveError && (
-            <div className="text-red-500 text-sm -mb-2" role="alert">
-              {saveError}
-            </div>
-          )}
-
-          <Button
-            type="primary"
+      <div className={styles.fields}>
+        {/* 1. Business Name (Simple) */}
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="brand-name">
+            Brand name
+          </label>
+          <Input
+            id="brand-name"
             size="large"
-            onClick={handleNext}
-            loading={isChecking || isSaving}
-            disabled={!subdomain || !businessName || isAvailable !== true || isSaving}
-            className="h-12 text-lg font-semibold bg-black hover:bg-gray-800 mt-2 rounded-lg"
-            icon={<ArrowRightOutlined />}
-            iconPlacement="end">
-            Start Building
-          </Button>
+            placeholder="e.g. Kicks On Fire"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+          />
         </div>
-      </Card>
+
+        {/* 2. Subdomain (Complex Validation) */}
+        <div className={styles.field}>
+          <div className={styles.fieldRow}>
+            <label className={styles.label} htmlFor="store-address">
+              Store address
+            </label>
+            {errorMsg && <span className={styles.error}>{errorMsg}</span>}
+            {!errorMsg && isAvailable === true && <span className={styles.ok}>Available</span>}
+          </div>
+
+          <Input
+            id="store-address"
+            size="large"
+            placeholder="toyscity"
+            value={subdomain}
+            onChange={handleSubdomainChange}
+            suffix={<AddressSuffix isChecking={isChecking} isAvailable={isAvailable} />}
+            status={isAvailable === false ? "error" : ""}
+            autoComplete="off"
+            spellCheck={false}
+          />
+
+          <span className={styles.hint}>Lowercase letters, numbers and hyphens. At least 3 characters.</span>
+        </div>
+
+        {/* 3. Type Selection */}
+        <div className={styles.field}>
+          <label className={styles.label} htmlFor="business-type">
+            What are you building?
+          </label>
+          <Select id="business-type" size="large" value={type} onChange={setType} options={options} style={{ width: "100%" }} />
+        </div>
+
+        {saveError && <Alert type="error" showIcon message={saveError} closable onClose={() => setSaveError("")} />}
+
+        <Button
+          type="primary"
+          size="large"
+          block
+          className={styles.submit}
+          onClick={handleNext}
+          loading={isChecking || isSaving}
+          disabled={!canSubmit}
+          icon={<ArrowRightOutlined />}
+          iconPlacement="end"
+        >
+          Continue
+        </Button>
+      </div>
     </div>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 0.8 9.5 5.4 14 7 9.5 8.6 8 13.2 6.5 8.6 2 7 6.5 5.4Z" />
+    </svg>
   );
 }

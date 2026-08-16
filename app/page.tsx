@@ -351,7 +351,7 @@ const LandingPage = () => {
           </div>
           <Collapse
             ghost
-            expandIconPosition="end"
+            expandIconPlacement="end"
             className={styles.faqCollapse}
             expandIcon={({ isActive }) => isActive ? <MinusOutlined /> : <PlusOutlined />}
             items={faqData}
@@ -474,7 +474,7 @@ const PriceCard = ({ title, price, desc, features, isFeatured = false }: any) =>
     >
       {title === 'Enterprise' ? 'Contact Us' : (isFeatured ? 'Get Started' : 'Sign Up Now')}
     </Button>
-    <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+    <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
       {features.map((f: string) => (
         <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <CheckCircleFilled style={{ color: isFeatured ? '#52c41a' : '#d9d9d9' }} />

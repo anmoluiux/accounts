@@ -14,14 +14,22 @@ import { usePersistor } from "./ReduxProvider";
  * browser-only post-mount event fires, so anything above it is excluded from the
  * static export and ships as an empty <body>.
  */
-export default function PersistBoundary({ children }: { children: React.ReactNode }) {
+export default function PersistBoundary({
+  children,
+  fallback = null,
+}: {
+  children: React.ReactNode;
+  /** Rendered while rehydration is in flight. Defaults to nothing, but pass a
+   *  skeleton wherever the gap is user-visible — the funnel does. */
+  fallback?: React.ReactNode;
+}) {
   const persistor = usePersistor();
 
   // No persistor (e.g. rendered outside ReduxProvider) — render rather than hang.
   if (!persistor) return <>{children}</>;
 
   return (
-    <PersistGate loading={null} persistor={persistor}>
+    <PersistGate loading={fallback} persistor={persistor}>
       {children}
     </PersistGate>
   );

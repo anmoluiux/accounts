@@ -2,6 +2,11 @@
 export const LARAVEL_URL    =  process.env.NEXT_PUBLIC_LARAVEL_URL || "https://laracom.brandwik.com/api/v1";
 export const MAIN_SITE_URL  = process.env.NEXT_PUBLIC_MAIN_SITE_URL || "";
 
+// The `bravo` marketing site, which owns /terms and /privacy. Linked from the
+// onboarding footer; override per environment rather than hardcoding at the
+// call site. Baked in at build time — this is a static export.
+export const MARKETING_URL  = process.env.NEXT_PUBLIC_MARKETING_URL || "https://brandwik.com";
+
 
 export const URL = {
     LARAVEL_URL,

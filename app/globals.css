@@ -12,6 +12,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * The Brandwik palette (`--bw-*`) used to live here, in a second `:root` block
+ * below `@theme inline`. It was silently dropped from the compiled output — in
+ * dev AND in the production build — so every `var(--bw-…)` in the onboarding
+ * funnel resolved to nothing: the form column fell back to transparent and
+ * showed `body` through it, which is white here and near-black under
+ * `prefers-color-scheme: dark`.
+ *
+ * Only the `:root` ABOVE `@theme inline` survives Tailwind v4's processing of
+ * this file. Rather than depend on that ordering, the palette now lives on
+ * `.shell` in `src/components/onboarding/onboard.module.css` — a CSS module,
+ * which is not run through the Tailwind entrypoint at all, and where the tokens
+ * sit next to the rules that consume them. Add new funnel tokens there.
+ */
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

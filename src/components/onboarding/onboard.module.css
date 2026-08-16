@@ -1,0 +1,385 @@
+/*
+ * Onboarding shell — 60 / 40 split.
+ *
+ * Layout lives here rather than in Tailwind utilities so the split is correct in
+ * the prerendered HTML of the static export, before any JS parses. The two
+ * columns scroll independently on desktop; below 1024px they stack and the page
+ * scrolls as one document.
+ */
+
+/*
+ * The Brandwik palette. Declared here, on the shell, rather than on `:root` in
+ * globals.css — a second `:root` block placed after `@theme inline` there is
+ * stripped from the compiled CSS in both dev and build, which left every
+ * var(--bw-…) below resolving to nothing. A CSS module is not processed through
+ * the Tailwind entrypoint, so these survive, and they inherit to every
+ * descendant: the showcase panel, the form column and the AntD controls inside
+ * both. Nothing outside `.shell` reads them.
+ *
+ * One palette, no dark variant: the funnel is a committed light-on-cream design
+ * and AntD is pinned to its light algorithm, so a `prefers-color-scheme` branch
+ * would only desync the two halves. `color-scheme: light` below states that to
+ * the browser, so form controls and scrollbars stay light for a visitor whose
+ * OS is in dark mode.
+ */
+.shell {
+  --bw-cream: #f3f2ea;
+  --bw-cream-sunk: #edebe0;
+  --bw-surface: #ffffff;
+
+  --bw-ink: #16191a;
+  --bw-ink-soft: #5c625c;
+  --bw-ink-faint: #8a8f88;
+  --bw-line: #dedbcc;
+
+  --bw-forest: #2e4b3a;
+  --bw-forest-hover: #3a5d49;
+  --bw-forest-deep: #101a14;
+  --bw-mint: #4fa97a;
+  --bw-danger: #b4462f;
+
+  /* Panel-side (dark green) foreground ramp. */
+  --bw-panel-text: #eff0e7;
+  --bw-panel-text-soft: rgba(239, 240, 231, 0.66);
+  --bw-panel-text-faint: rgba(239, 240, 231, 0.44);
+  --bw-panel-line: rgba(239, 240, 231, 0.12);
+  --bw-panel-card: rgba(239, 240, 231, 0.055);
+
+  color-scheme: light;
+
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: 100dvh;
+  background: var(--bw-cream);
+  color: var(--bw-ink);
+  /* Overrides the `body { font-family: Arial }` in globals.css, which otherwise
+     beats the Geist variables that next/font puts on <body>. Scoped to the shell
+     so the landing page keeps its current typography. */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    grid-template-columns: 60fr 40fr;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* ── Right column: the form ──────────────────────────────────────────────── */
+
+.formColumn {
+  display: flex;
+  flex-direction: column;
+  background: var(--bw-cream);
+}
+
+@media (min-width: 1024px) {
+  .formColumn {
+    height: 100dvh;
+    overflow-y: auto;
+    /* Stops a scroll that bottoms out here from chaining to the document and
+       dragging the fixed showcase panel. */
+    overscroll-behavior: contain;
+    border-left: 1px solid var(--bw-line);
+  }
+}
+
+.formInner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  max-width: 452px;
+  margin-inline: auto;
+  padding: clamp(28px, 4.5vw, 56px) clamp(20px, 4vw, 40px) 32px;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stepCount {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bw-ink-faint);
+}
+
+/* Three hairline segments that fill as the funnel advances — a progress read
+   that survives on mobile, where the showcase rail is hidden. */
+.progressTrack {
+  display: flex;
+  gap: 5px;
+  width: 88px;
+}
+
+.progressSegment {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--bw-line);
+  transition: background-color 0.35s ease;
+}
+
+.progressSegmentFilled {
+  background: var(--bw-forest);
+}
+
+/* Centres the step in the spare height between header and footer. Safe against
+   clipping: nothing in this chain has a fixed height, so a tall step (step 2)
+   grows `.formInner` and the column scrolls instead of `justify-content`
+   pushing content out of reach. */
+.formBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.formFooter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--bw-line);
+  font-size: 11.5px;
+  color: var(--bw-ink-faint);
+}
+
+.formFooter a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.formFooter a:hover {
+  color: var(--bw-ink-soft);
+  border-bottom-color: var(--bw-line);
+}
+
+/* ── Step primitives, shared by every step component ─────────────────────── */
+
+.stepEnter {
+  animation: stepIn 0.4s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.stepHead {
+  margin-bottom: 26px;
+}
+
+.stepEyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 5px 11px 5px 8px;
+  border: 1px solid var(--bw-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--bw-forest);
+}
+
+.stepTitle {
+  margin: 0 0 10px;
+  font-size: clamp(27px, 3vw, 33px);
+  font-weight: 700;
+  line-height: 1.14;
+  letter-spacing: -0.024em;
+  color: var(--bw-ink);
+}
+
+.stepSubtitle {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--bw-ink-soft);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bw-ink);
+}
+
+.hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--bw-ink-faint);
+}
+
+.error {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--bw-danger);
+}
+
+.ok {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--bw-forest);
+}
+
+/* Store-address suffix: the `.brandwik.com` tail plus the availability icon,
+   both sitting inside the input's border. The tail is quieter than the typed
+   text so the part the user owns still reads first. */
+.addressSuffix {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.domainTail {
+  font-size: 13.5px;
+  color: var(--bw-ink-faint);
+  white-space: nowrap;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Feature picker (step 2). Two-up at 452px is tight but readable; the tiles are
+   the click target, not just the checkbox. */
+.featureGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.featureTile {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--bw-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.featureTile:hover {
+  border-color: var(--bw-forest);
+  background: var(--bw-surface);
+}
+
+.featureTile :global(.ant-checkbox-wrapper) {
+  width: 100%;
+  font-size: 13px;
+}
+
+.submit {
+  margin-top: 6px;
+}
+
+.backLink {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--bw-ink-soft);
+  cursor: pointer;
+}
+
+.backLink:hover:not(:disabled) {
+  color: var(--bw-ink);
+}
+
+.backLink:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Rehydration skeleton ────────────────────────────────────────────────── */
+
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 19px;
+}
+
+.skeletonBar {
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--bw-cream-sunk) 0%, #f7f6ef 50%, var(--bw-cream-sunk) 100%);
+  background-size: 220% 100%;
+  animation: skeletonSweep 1.4s ease-in-out infinite;
+}
+
+.skeletonTitle {
+  height: 30px;
+  width: 72%;
+  margin-bottom: 8px;
+}
+
+.skeletonInput {
+  height: 46px;
+  border-radius: 10px;
+}
+
+.skeletonButton {
+  height: 48px;
+  border-radius: 10px;
+  margin-top: 6px;
+  opacity: 0.75;
+}
+
+@keyframes skeletonSweep {
+  from {
+    background-position: 130% 0;
+  }
+  to {
+    background-position: -30% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepEnter,
+  .skeletonBar {
+    animation: none;
+  }
+}

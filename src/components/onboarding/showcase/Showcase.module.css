@@ -1,0 +1,703 @@
+/*
+ * Showcase panel — left 60% of the onboarding shell.
+ *
+ * Three zones, pushed apart rather than packed together:
+ *   header   brand + headline
+ *   centre   step-dependent body (themes / included / build)
+ *   footer   testimonial marquee, bleeding to both edges
+ *
+ * Server-rendered: everything paints from the static export before any JS runs.
+ * Only the two scene switches and the step-2 scenes hydrate; the marquee loop is
+ * pure CSS. Below 1024px the panel collapses to a short band above the form.
+ */
+
+.panel {
+  /* Shared by the content column's padding and by the full-bleed children that
+     cancel it (theme row) or ignore it (marquee). Declared here, not on
+     `.panelInner`, because the marquee is a sibling of that column. */
+  --panel-pad: clamp(22px, 4.5vw, 64px);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--bw-panel-text);
+  background:
+    radial-gradient(118% 78% at 76% 4%, rgba(96, 152, 113, 0.3) 0%, transparent 56%),
+    radial-gradient(92% 68% at 6% 94%, rgba(58, 102, 74, 0.26) 0%, transparent 62%),
+    linear-gradient(158deg, #263b2d 0%, #17251c 46%, #0d150f 100%);
+}
+
+/* Fine top highlight, so the panel reads as lit rather than flat. */
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(239, 240, 231, 0.16), transparent);
+}
+
+/* No max-width: the theme row needs the panel's full width to read as a gallery
+   that continues past the edge, and the headline caps itself at 15ch anyway. */
+.panelInner {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: clamp(28px, 5vh, 56px);
+  width: 100%;
+  padding: clamp(26px, 4vw, 56px) var(--panel-pad) 0;
+}
+
+@media (min-width: 1024px) {
+  .panel {
+    height: 100dvh;
+  }
+  .panelInner {
+    /* The three zones sit apart instead of stacking from the top — this is what
+       keeps the panel from reading as a cluttered column. */
+    justify-content: space-between;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .panelInner::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 3.4vh, 38px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--bw-panel-text);
+  color: var(--bw-forest-deep);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.wordmark {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.headline {
+  max-width: 15ch;
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 48px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.032em;
+  text-wrap: balance;
+}
+
+.headlineAccent {
+  color: rgba(150, 205, 170, 0.92);
+}
+
+/* Quiet label above each centre body, so the zone announces itself without
+   needing a second headline competing with the one above it. */
+.sectionLabel {
+  margin: 0 0 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bw-panel-text-faint);
+}
+
+/* ── Scene switching ─────────────────────────────────────────────────────── */
+
+/*
+ * Grid stacking rather than absolute positioning: every scene occupies the same
+ * cell, so the zone is as tall as its tallest scene and can still be measured.
+ * Nothing below shifts as the step changes, and nothing gets clipped the way
+ * `position: absolute` inside a flex item would.
+ */
+.stage {
+  display: grid;
+  min-height: 0;
+}
+
+.scene {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  /* visibility is delayed by the fade duration so the outgoing scene stays
+     painted while it fades, then leaves hit-testing. */
+  visibility: hidden;
+  transition: opacity 0.42s ease, transform 0.42s ease, visibility 0s linear 0.42s;
+}
+
+.sceneActive {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 0.42s ease, transform 0.42s ease, visibility 0s;
+}
+
+.bodyStage {
+  /* Absorbs the slack between header and marquee so the three zones stay
+     pushed apart at any height. */
+  flex: 1;
+  align-content: center;
+}
+
+/* ── Centre, scene 0: themes ─────────────────────────────────────────────── */
+
+.themes {
+  min-width: 0;
+}
+
+/* Bleeds off the right edge of the panel: the row should read as a gallery that
+   continues past the fold, not a tidy set of six. Native scroll + snap gives
+   touch swipe and keyboard scrolling with no JS. */
+.themeRow {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 4px 0 8px;
+  padding-inline: var(--panel-pad);
+  margin-inline: calc(-1 * var(--panel-pad));
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  /* Without this the container snaps to the first card on load and scrolls its
+     own left padding out of view, so the row starts flush against the panel
+     edge instead of lining up with the label above it. scroll-padding tells
+     snapping where the usable scrollport actually starts. */
+  scroll-padding-inline: var(--panel-pad);
+  scrollbar-width: none;
+}
+
+.themeRow::-webkit-scrollbar {
+  display: none;
+}
+
+.themeCard {
+  flex: 0 0 clamp(168px, 17vw, 216px);
+  scroll-snap-align: start;
+}
+
+.themeShot {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--bw-panel-line);
+  border-radius: 13px;
+  background: var(--t-bg, #1d2a22);
+  object-fit: cover;
+  object-position: top center;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.themeCard:hover .themeShot {
+  transform: translateY(-3px);
+  border-color: rgba(239, 240, 231, 0.28);
+}
+
+/* Mockup internals. Everything is tinted from --t-ink / --t-accent, so one set
+   of rules covers light and dark themes with no per-theme CSS. */
+.themeChrome {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  align-items: center;
+  height: 15px;
+  padding-inline: 8px;
+}
+
+.themeChrome i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--t-ink);
+  opacity: 0.22;
+}
+
+.themeHero {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 0 8px;
+  padding: 10px;
+  border-radius: 7px;
+  background: var(--t-accent);
+}
+
+.themeHeroBar,
+.themeHeroBarShort {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--t-bg);
+  opacity: 0.85;
+}
+
+.themeHeroBar {
+  width: 62%;
+}
+
+.themeHeroBarShort {
+  width: 34%;
+}
+
+.themeGrid {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  height: 26%;
+  margin: 8px;
+}
+
+.themeGrid i {
+  border-radius: 5px;
+  background: var(--t-ink);
+  opacity: 0.13;
+}
+
+.themeMeta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.themeName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bw-panel-text);
+}
+
+.themeTag {
+  font-size: 11.5px;
+  color: var(--bw-panel-text-faint);
+}
+
+/* ── Centre, scene 1: what's included ────────────────────────────────────── */
+
+.includedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.includedTile {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "icon title"
+    ".    line";
+  gap: 2px 12px;
+  /* Tiles stretch to a common height, but their rows must not: without this,
+     a tile whose description wraps to one line spreads the slack across both
+     rows and its title sits lower than its neighbour's. */
+  align-content: start;
+  padding: 16px 18px;
+  border: 1px solid var(--bw-panel-line);
+  border-radius: 14px;
+  background: var(--bw-panel-card);
+}
+
+.includedIcon {
+  grid-area: icon;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin-top: -3px;
+  border-radius: 9px;
+  background: rgba(79, 169, 122, 0.16);
+  color: var(--bw-mint);
+}
+
+.includedTitle {
+  grid-area: title;
+  align-self: center;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.includedLine {
+  grid-area: line;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--bw-panel-text-faint);
+}
+
+/* ── Centre, scene 2: the build ──────────────────────────────────────────── */
+
+.stages {
+  display: flex;
+  flex-direction: column;
+}
+
+.stageList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stageItem {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--bw-panel-line);
+}
+
+.stageItem:last-child {
+  border-bottom: 0;
+}
+
+.stageGlyph {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--bw-panel-line);
+  border-radius: 50%;
+  color: var(--bw-mint);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.stageDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bw-panel-text-faint);
+}
+
+.stageLabel {
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--bw-panel-text-faint);
+  transition: color 0.3s ease;
+}
+
+.stageState {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--bw-panel-text-faint);
+}
+
+.stageItemDone .stageGlyph {
+  border-color: rgba(79, 169, 122, 0.45);
+  background: rgba(79, 169, 122, 0.18);
+}
+
+.stageItemDone .stageLabel {
+  color: var(--bw-panel-text-soft);
+}
+
+.stageItemRunning .stageGlyph {
+  border-color: rgba(239, 240, 231, 0.4);
+}
+
+.stageItemRunning .stageLabel {
+  color: var(--bw-panel-text);
+  font-weight: 600;
+}
+
+.stageItemRunning .stageState {
+  color: var(--bw-mint);
+}
+
+/* The dot on the running stage breathes — one moving element, so "still
+   working" is legible without a spinner competing with the progress bar in the
+   form column. */
+.stageItemRunning .stageDot {
+  background: var(--bw-mint);
+  animation: stagePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes stagePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.7);
+  }
+}
+
+.stageLink {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 9px;
+  margin-top: 18px;
+  padding: 10px 16px;
+  border: 1px solid rgba(79, 169, 122, 0.4);
+  border-radius: 999px;
+  background: rgba(79, 169, 122, 0.12);
+  color: var(--bw-panel-text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.stageLink:hover {
+  border-color: rgba(79, 169, 122, 0.7);
+  background: rgba(79, 169, 122, 0.2);
+}
+
+.stageLinkDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--bw-mint);
+  box-shadow: 0 0 0 3px rgba(79, 169, 122, 0.22);
+}
+
+/* ── Footer: testimonial marquee ─────────────────────────────────────────── */
+
+/* Edge to edge by construction — a direct child of `.panel`, so it spans the
+   full panel width with no negative-margin trickery. The mask softens the two
+   ends rather than guillotining a card. */
+.marquee {
+  flex: 0 0 auto;
+  padding-block: clamp(18px, 2.5vh, 30px) clamp(26px, 4vw, 56px);
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 3.5%, #000 96.5%, transparent);
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  /* Slides exactly one copy's width, then repeats — seamless because the two
+     rows are identical and spacing lives on the cards, not between the rows. */
+  animation: marqueeDrift 58s linear infinite;
+}
+
+.marquee:hover .marqueeTrack {
+  animation-play-state: paused;
+}
+
+/* Rightward travel, per the brief. Starting at -50% and ending at 0 means the
+   track is always covering the viewport at both ends of the cycle. */
+@keyframes marqueeDrift {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.marqueeRow {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Spacing is per-card margin, NOT a flex gap on the track: with `gap`, the
+   track's width is 2×cards + (2n−1)×gap, whose half is not one full copy, and
+   the loop drifts a few pixels every lap. */
+.marqueeCard {
+  display: flex;
+  flex: 0 0 300px;
+  flex-direction: column;
+  gap: 10px;
+  margin-right: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--bw-panel-line);
+  border-radius: 14px;
+  background: var(--bw-panel-card);
+}
+
+.marqueeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stars {
+  display: inline-flex;
+  gap: 1.5px;
+}
+
+.starOn {
+  color: #f4b740;
+}
+
+.starOff {
+  color: rgba(239, 240, 231, 0.2);
+}
+
+.sourceChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px 3px 6px;
+  border: 1px solid var(--bw-panel-line);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--bw-panel-text-soft);
+  white-space: nowrap;
+}
+
+.sourceMark {
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  background: rgba(239, 240, 231, 0.12);
+  color: var(--bw-panel-text);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.marqueeQuote {
+  flex: 1;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--bw-panel-text);
+}
+
+.marqueeWho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.marqueeAvatar {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(239, 240, 231, 0.14);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.marqueeName {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.marqueeRole {
+  display: block;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--bw-panel-text-faint);
+}
+
+/* ── Short desktop viewports ─────────────────────────────────────────────── */
+
+/*
+ * 1280×720 laptops are common. Height-based rather than width-based — a short
+ * window at 1600px wide has the same problem.
+ */
+@media (min-width: 1024px) and (max-height: 820px) {
+  .panelInner {
+    gap: clamp(18px, 3vh, 32px);
+  }
+  .headline {
+    font-size: clamp(28px, 2.9vw, 38px);
+  }
+  .themeCard {
+    flex-basis: clamp(150px, 14vw, 184px);
+  }
+  .includedTile {
+    padding: 13px 15px;
+  }
+  .stageItem {
+    padding: 9px 0;
+  }
+  .marqueeCard {
+    flex-basis: 272px;
+    padding: 14px 16px;
+  }
+}
+
+/* ── Compact band below the split breakpoint ─────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .panelInner {
+    gap: 20px;
+  }
+  .header {
+    gap: 14px;
+  }
+  .headline {
+    max-width: none;
+  }
+  /* The theme gallery needs width it does not have here, and it would push the
+     form below the fold. The marquee stays: it is the cheapest social proof on
+     a phone and costs one CSS animation. */
+  .bodyStage {
+    display: none;
+  }
+  .marqueeCard {
+    flex-basis: 264px;
+    padding: 13px 15px;
+  }
+  .marqueeQuote {
+    font-size: 12.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .sceneActive {
+    transform: none;
+    transition: opacity 0.01s linear, visibility 0s;
+  }
+  .marqueeTrack {
+    animation: none;
+  }
+  .stageItemRunning .stageDot {
+    animation: none;
+  }
+  .themeCard:hover .themeShot {
+    transform: none;
+  }
+}

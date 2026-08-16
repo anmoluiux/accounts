@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button, Input, Checkbox, Typography, Form, Card, Alert } from "antd";
+import { Button, Input, Checkbox, Form, Alert } from "antd";
 import { ArrowLeftOutlined, RocketFilled, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
+import styles from "./onboard.module.css";
 // import PhoneInput from "react-phone-number-input";
 // import "react-phone-number-input/style.css"; // Import default styles
 import { useAppDispatch, useAppSelector } from "@/src/lib/hooks";
@@ -11,7 +12,6 @@ import { URL } from "@/src/assets/url";
 import debounce from "lodash/debounce";
 
 
-const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 // AI Logic: Smart features based on Store Type
@@ -48,7 +48,7 @@ const FEATURE_SUGGESTIONS: Record<string, { label: string, value: string }[]> = 
   ],
 };
 
-// Module scope, same reasoning as Step1_Prompt's StatusSuffix: a component
+// Module scope, same reasoning as Step1_Prompt's StatusIcon: a component
 // declared inside the render body is a new type every render, which remounts
 // the suffix node on each keystroke rather than re-rendering it.
 const EmailStatusSuffix = ({ isChecking, isAvailable }: { isChecking: boolean; isAvailable: boolean | null }) => {
@@ -210,99 +210,107 @@ export default function Details() {
   }, [debouncedCheckEmail]);
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 animate-fadeIn pb-10">
-      <div className="text-center mb-8">
-        <Title level={2} style={{ margin: 0 }}>
+    <div>
+      <div className={styles.stepHead}>
+        <button type="button" className={styles.backLink} onClick={() => dispatch(setStep(0))} disabled={isSubmitting}>
+          <ArrowLeftOutlined style={{ fontSize: 11, marginRight: 6 }} />
+          Back
+        </button>
+        <h2 className={styles.stepTitle} style={{ marginTop: 14 }}>
           Almost there.
-        </Title>
-        <Text type="secondary" className="text-lg">
-          Tell us a bit about <strong>{stepData.siteName}</strong> so we can write the content.
-        </Text>
+        </h2>
+        <p className={styles.stepSubtitle}>
+          {/* businessName is the brand the customer typed; siteName is the
+              subdomain. Greeting someone with their subdomain reads like a bug. */}
+          A few details about <strong>{stepData.businessName || stepData.siteName || "your store"}</strong> so
+          we can set it up with the right pages and content.
+        </p>
       </div>
 
-      <Card className="shadow-lg border-0 rounded-2xl p-2">
-        <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
-          {/* 1. Business Description */}
-          <Form.Item label={<span className="font-semibold text-gray-700">What is your business goal?</span>} name="description" rules={[{ required: true, message: "Please write a short description." }]}>
-            <TextArea rows={3} placeholder={`e.g. We sell premium leather sneakers for urban hikers. based in NYC.`} className="rounded-lg" />
-          </Form.Item>
+      {/* Single column: the form lives in the 40% rail, so a two-up grid would
+          crush every control. `size="large"` matches step 1's controls. */}
+      <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
+        {/* 1. Business Description */}
+        <Form.Item label="What do you sell?" name="description" rules={[{ required: true, message: "Please write a short description." }]}>
+          <TextArea rows={3} placeholder="e.g. Premium leather sneakers for urban hikers, based in NYC." />
+        </Form.Item>
 
-          {/* 2. Smart Features (Checkboxes) */}
-          <Form.Item label={<span className="font-semibold text-gray-700">Key Features Needed</span>} name="features">
-            <Checkbox.Group className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
-              {activeSuggestions.map((feature) => (
-                <div key={feature.value} className="bg-gray-50 p-3 rounded-lg border border-gray-100 hover:border-blue-200 transition-colors">
-                  <Checkbox value={feature.value}>{feature.label}</Checkbox>
-                </div>
-              ))}
-            </Checkbox.Group>
-          </Form.Item>
+        {/* 2. Smart Features (Checkboxes) */}
+        <Form.Item label="Features you want" name="features">
+          {/* Tiles are divs, not labels: antd's Checkbox already renders its own
+              <label>, and nesting labels is invalid HTML. */}
+          <Checkbox.Group className={styles.featureGrid}>
+            {activeSuggestions.map((feature) => (
+              <div key={feature.value} className={styles.featureTile}>
+                <Checkbox value={feature.value}>{feature.label}</Checkbox>
+              </div>
+            ))}
+          </Checkbox.Group>
+        </Form.Item>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {/* 3. Email */}
-            <Form.Item
-              label={
-                <span className="font-semibold text-gray-700">
-                  Your Email {emailError && <span className="text-red-500 ml-2">- {emailError}</span>}
-                </span>
-              }
-              name="email"
-              validateStatus={isEmailAvailable === false ? "error" : ""}
-              rules={[
-                { required: true, message: "Email is required" },
-                { type: "email", message: "Please enter a valid email" },
-              ]}
-            >
-              <Input
-                placeholder="john@example.com"
-                onChange={handleEmailChange}
-                suffix={<EmailStatusSuffix isChecking={isCheckingEmail} isAvailable={isEmailAvailable} />}
-              />
-            </Form.Item>
+        {/* 3. Email */}
+        <Form.Item
+          label={
+            <span className={styles.fieldRow} style={{ width: "100%" }}>
+              <span>Your email</span>
+              {emailError && <span className={styles.error}>{emailError}</span>}
+            </span>
+          }
+          name="email"
+          validateStatus={isEmailAvailable === false ? "error" : ""}
+          rules={[
+            { required: true, message: "Email is required" },
+            { type: "email", message: "Please enter a valid email" },
+          ]}
+        >
+          <Input
+            placeholder="john@example.com"
+            onChange={handleEmailChange}
+            autoComplete="email"
+            suffix={<EmailStatusSuffix isChecking={isCheckingEmail} isAvailable={isEmailAvailable} />}
+          />
+        </Form.Item>
 
-            {/* 4. Phone (Custom Lib) */}
-            <div className="ant-form-item">
-              {/* <label className="font-semibold text-gray-700 block mb-2">Phone Number</label> */}
-              {/* <PhoneInput defaultCountry="US" placeholder="Enter phone number" value={phoneValue} onChange={(val) => setPhoneValue(val as string)} className="ant-input rounded-lg h-10 px-3 flex items-center" /> */}
-              <Form.Item label={<span className="font-semibold text-gray-700">Phone</span>} name="phone" rules={[{ required: true, message: "Phone number is required" }]}>
-                <Input />
-              </Form.Item>
-            </div>
-          </div>
+        {/* 4. Phone (Custom Lib) */}
+        {/* <PhoneInput defaultCountry="US" placeholder="Enter phone number" value={phoneValue} onChange={(val) => setPhoneValue(val as string)} /> */}
+        <Form.Item label="Phone" name="phone" rules={[{ required: true, message: "Phone number is required" }]}>
+          <Input autoComplete="tel" placeholder="+1 555 000 1234" />
+        </Form.Item>
 
-          <Form.Item label={<span className="font-semibold text-gray-700">Password</span>} name="password" rules={[{ required: true, message: "Password is required" }]}>
-            <Input.Password value={'121212'} />
-          </Form.Item>
-          {submitError && (
-            <Alert
-              type="error"
-              showIcon
-              message={submitError}
-              className="mt-4"
-              closable
-              onClose={() => setSubmitError("")}
-            />
-          )}
+        <Form.Item
+          label="Choose a password"
+          name="password"
+          rules={[{ required: true, message: "Password is required" }]}
+          extra={<span className={styles.hint}>You&apos;ll use this to sign in to your store admin.</span>}
+        >
+          <Input.Password autoComplete="new-password" />
+        </Form.Item>
 
-          {/* Navigation Buttons */}
-          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-100">
-            <Button type="text" size="large" icon={<ArrowLeftOutlined />} onClick={() => dispatch(setStep(0))} disabled={isSubmitting}>Back</Button>
+        {submitError && (
+          <Alert
+            type="error"
+            showIcon
+            message={submitError}
+            style={{ marginBottom: 16 }}
+            closable
+            onClose={() => setSubmitError("")}
+          />
+        )}
 
-            <Button
-              type="primary"
-              htmlType="submit"
-              size="large"
-              loading={isSubmitting}
-              disabled={isEmailAvailable === false || isCheckingEmail || isSubmitting}
-              className="h-12 px-8 text-lg font-semibold bg-blue-600 hover:bg-blue-500 shadow-blue-200 shadow-lg"
-              icon={<RocketFilled />}
-              iconPlacement="end"
-            >
-              Generate Site
-            </Button>
-          </div>
-        </Form>
-      </Card>
+        <Button
+          type="primary"
+          htmlType="submit"
+          size="large"
+          block
+          className={styles.submit}
+          loading={isSubmitting}
+          disabled={isEmailAvailable === false || isCheckingEmail || isSubmitting}
+          icon={<RocketFilled />}
+          iconPlacement="end"
+        >
+          Build my store
+        </Button>
+      </Form>
     </div>
   );
 }
