@@ -23,6 +23,9 @@ export default function FormColumn({ children }: { children: React.ReactNode }) 
   return (
     <main className={styles.formColumn}>
       <div className={styles.formInner}>
+        {/* Renders null on step 0 — the visibility rule lives in the component,
+            not here, so `.formInner`'s flex gap collapses with it and step 0
+            gets no phantom space where the counter would be. */}
         <FormHeader />
 
         <div className={styles.formBody}>
@@ -30,16 +33,19 @@ export default function FormColumn({ children }: { children: React.ReactNode }) 
             <PersistBoundary fallback={<FormSkeleton />}>{children}</PersistBoundary>
           </OnboardTheme>
         </div>
+      </div>
 
-        <div className={styles.formFooter}>
-          <span>© {new Date().getFullYear()} Brandwik</span>
-          <a href={`${MARKETING_URL}/privacy`} target="_blank" rel="noreferrer">
-            Privacy
-          </a>
-          <a href={`${MARKETING_URL}/terms`} target="_blank" rel="noreferrer">
-            Terms
-          </a>
-        </div>
+      {/* Outside `.formInner` so it spans the whole column: that wrapper caps
+          itself at the form's reading width (452px), and a child of it can only
+          ever be that wide. It carries its own inline padding instead. */}
+      <div className={styles.formFooter}>
+        <span>© {new Date().getFullYear()} Brandwik</span>
+        <a href={`${MARKETING_URL}/privacy`} target="_blank" rel="noreferrer">
+          Privacy
+        </a>
+        <a href={`${MARKETING_URL}/terms`} target="_blank" rel="noreferrer">
+          Terms
+        </a>
       </div>
     </main>
   );

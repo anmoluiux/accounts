@@ -94,7 +94,8 @@
   width: 100%;
   max-width: 452px;
   margin-inline: auto;
-  padding: clamp(28px, 4.5vw, 56px) clamp(20px, 4vw, 40px) 32px;
+  /* No bottom padding: the footer is now a sibling and brings its own. */
+  padding: clamp(28px, 4.5vw, 56px) clamp(20px, 4vw, 40px) 0;
 }
 
 .formHeader {
@@ -143,12 +144,15 @@
   justify-content: center;
 }
 
+/* A direct child of `.formColumn`, not of the width-capped `.formInner`, so the
+   rule above it runs the full width of the right section. `margin-top: auto`
+   still pins it to the bottom when the step is short. */
 .formFooter {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 14px;
   margin-top: auto;
-  padding-top: 24px;
+  padding: 20px clamp(20px, 4vw, 40px) 24px;
   border-top: 1px solid var(--bw-line);
   font-size: 11.5px;
   color: var(--bw-ink-faint);

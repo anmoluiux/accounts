@@ -31,10 +31,8 @@ export default function ShowcasePanel() {
       <div className={styles.panelInner}>
         <header className={styles.header}>
           <div className={styles.brand}>
-            <span className={styles.mark} aria-hidden="true">
-              B
-            </span>
-            <span className={styles.wordmark}>brandwik</span>
+            <BoltMark />
+            <span className={styles.wordmark}>Brandwik</span>
           </div>
 
           {/* Index matches `onboarding.currentStep`, same as the body below. */}
@@ -64,5 +62,32 @@ export default function ShowcasePanel() {
           column's edges, not the panel's. */}
       <TestimonialMarquee items={PROOF} />
     </aside>
+  );
+}
+
+/**
+ * Placeholder brand mark — the bolt, drawn inline.
+ *
+ * Inline SVG rather than a file in `public/`: it inherits `currentColor`, so it
+ * sits correctly on the dark panel and would sit correctly on cream without a
+ * second asset, and it costs no request. When the real logo lands, this is the
+ * one place to swap — nothing else in the funnel draws the mark.
+ */
+function BoltMark() {
+  return (
+    <svg
+      className={styles.mark}
+      // viewBox is cropped to the path's exact bounds (x 4.5→18, y 2→22) so the
+      // glyph fills its box. With a stock 0 0 24 24 box the bolt only occupies
+      // the middle ~56%, and it renders visibly smaller than whatever size the
+      // CSS asks for.
+      viewBox="4.5 2 13.5 20"
+      fill="currentColor"
+      // Hidden from assistive tech: the wordmark beside it already says the
+      // name, and labelling both reads it out twice.
+      aria-hidden="true"
+    >
+      <path d="M14 2 4.5 13.6h5.4L8.6 22 18 10.4h-5.4z" />
+    </svg>
   );
 }

@@ -75,26 +75,23 @@
 .brand {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 9px;
 }
 
+/* Bare glyph, no container tile — the supplied lockup is bolt + wordmark with
+   nothing around it. Colour comes from `currentColor` on the panel. */
 .mark {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  background: var(--bw-panel-text);
-  color: var(--bw-forest-deep);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1;
+  flex: 0 0 auto;
+  /* 13.5:20 — matches the cropped viewBox, so the bolt never distorts. */
+  width: 22px;
+  height: 32px;
+  color: var(--bw-panel-text);
 }
 
 .wordmark {
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .headline {
@@ -493,7 +490,9 @@
    ends rather than guillotining a card. */
 .marquee {
   flex: 0 0 auto;
-  padding-block: clamp(18px, 2.5vh, 30px) clamp(26px, 4vw, 56px);
+  /* Bottom is a flat 16px, not scaled with the panel's other padding: the
+     marquee sits against the foot of the panel on purpose. */
+  padding-block: clamp(18px, 2.5vh, 30px) 16px;
   overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 3.5%, #000 96.5%, transparent);
 }
@@ -533,13 +532,13 @@
    the loop drifts a few pixels every lap. */
 .marqueeCard {
   display: flex;
-  flex: 0 0 300px;
+  flex: 0 0 256px;
   flex-direction: column;
-  gap: 10px;
-  margin-right: 14px;
-  padding: 16px 18px;
+  gap: 8px;
+  margin-right: 12px;
+  padding: 13px 15px;
   border: 1px solid var(--bw-panel-line);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--bw-panel-card);
 }
 
@@ -547,12 +546,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .stars {
   display: inline-flex;
   gap: 1.5px;
+}
+
+/* Sized here rather than on the SVG attributes so the card scales as one unit
+   at each breakpoint. Deliberately not shrunk with the rest of the card — the
+   rating is the thing that reads at a glance on a moving marquee. */
+.stars svg {
+  width: 13px;
+  height: 13px;
 }
 
 .starOn {
@@ -566,11 +573,11 @@
 .sourceChip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 3px 9px 3px 6px;
+  gap: 4px;
+  padding: 2px 7px 2px 4px;
   border: 1px solid var(--bw-panel-line);
   border-radius: 999px;
-  font-size: 10.5px;
+  font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--bw-panel-text-soft);
@@ -580,12 +587,13 @@
 .sourceMark {
   display: grid;
   place-items: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
+  width: 12px;
+  height: 12px;
+  padding: 2px;
+  border-radius: 3px;
   background: rgba(239, 240, 231, 0.12);
   color: var(--bw-panel-text);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 700;
   line-height: 1;
 }
@@ -593,7 +601,7 @@
 .marqueeQuote {
   flex: 1;
   margin: 0;
-  font-size: 13.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--bw-panel-text);
 }
@@ -601,31 +609,31 @@
 .marqueeWho {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .marqueeAvatar {
   display: grid;
   flex: 0 0 auto;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
   background: rgba(239, 240, 231, 0.14);
-  font-size: 10.5px;
+  font-size: 9px;
   font-weight: 600;
 }
 
 .marqueeName {
   display: block;
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-weight: 600;
   line-height: 1.3;
 }
 
 .marqueeRole {
   display: block;
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1.35;
   color: var(--bw-panel-text-faint);
 }
@@ -653,8 +661,8 @@
     padding: 9px 0;
   }
   .marqueeCard {
-    flex-basis: 272px;
-    padding: 14px 16px;
+    flex-basis: 234px;
+    padding: 12px 14px;
   }
 }
 
@@ -677,11 +685,11 @@
     display: none;
   }
   .marqueeCard {
-    flex-basis: 264px;
-    padding: 13px 15px;
+    flex-basis: 232px;
+    padding: 12px 14px;
   }
   .marqueeQuote {
-    font-size: 12.5px;
+    font-size: 11.5px;
   }
 }
 

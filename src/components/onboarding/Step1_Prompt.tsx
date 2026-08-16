@@ -167,10 +167,13 @@ export default function Step1_Prompt() {
           Takes about 2 minutes
         </span>
         <h2 className={styles.stepTitle}>Let&apos;s name your store.</h2>
-        <p className={styles.stepSubtitle}>
+        {/* Hidden for now. Commented out here rather than `display: none` on
+            `.stepSubtitle`, which is shared — that rule would also blank the
+            subtitles on steps 2 and 3. Restore by uncommenting. */}
+        {/* <p className={styles.stepSubtitle}>
           Your brand name is what customers see. The address is where they find you — you can point
           a custom domain at it later.
-        </p>
+        </p> */}
       </div>
 
       <div className={styles.fields}>
