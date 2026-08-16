@@ -1,52 +1,33 @@
-import PersistBoundary from "@/src/store/PersistBoundary";
 import { MARKETING_URL } from "@/src/assets/url";
 import FormHeader from "./FormHeader";
-import FormSkeleton from "./FormSkeleton";
 import OnboardTheme from "./OnboardTheme";
 import styles from "../onboard.module.css";
 
 /**
- * Right 40% of the onboarding shell: header, the active step, footer.
+ * Right 40% of the shell: step counter, the page's own content, footer.
+ *
+ * Shared by /onboard and /login — one instance, from the single layout above.
  *
  * Deliberately NOT a client component. It renders client components
- * (`FormHeader`, `OnboardTheme`, `PersistBoundary`) and passes the step through
- * as `children`, which keeps the `"use client"` boundary on the leaves that
- * actually need state. The chrome around the form — header row, footer, legal
- * links — ships as static HTML.
+ * (`FormHeader`, `OnboardTheme`) and passes the page through as `children`,
+ * which keeps the `"use client"` boundary on the leaves that actually need
+ * state. The chrome — header row, footer, legal links — ships as static HTML.
  *
- * `PersistBoundary` wraps only the step, not the column. The old funnel gated
- * the entire route on rehydration, so the whole page was blank until
- * localStorage was read; now the showcase panel and this chrome paint first and
- * only the form itself waits.
+ * The rehydration gate is NOT here: only /onboard reads persisted state, so that
+ * route wraps its own content in `PersistBoundary`. Gating the shared column
+ * would make /login wait on a store it never reads.
  */
-export default function FormColumn({
-  children,
-  showStepHeader = true,
-  gateOnRehydration = true,
-}: {
-  children: React.ReactNode;
-  /** The login route has no steps, so no counter. */
-  showStepHeader?: boolean;
-  /** Only the funnel reads persisted state. Login does not, so it should not
-   *  flash a skeleton waiting for redux-persist it will never consult. */
-  gateOnRehydration?: boolean;
-}) {
+export default function FormColumn({ children }: { children: React.ReactNode }) {
   return (
     <main className={styles.formColumn}>
       <div className={styles.formInner}>
-        {/* Renders null on step 0 too — that rule lives in the component, not
-            here, so `.formInner`'s flex gap collapses with it and step 0 gets
-            no phantom space where the counter would be. */}
-        {showStepHeader && <FormHeader />}
+        {/* Renders null off the funnel and on step 0 — those rules live in the
+            component, so `.formInner`'s flex gap collapses with it and neither
+            case leaves phantom space where the counter would be. */}
+        <FormHeader />
 
         <div className={styles.formBody}>
-          <OnboardTheme>
-            {gateOnRehydration ? (
-              <PersistBoundary fallback={<FormSkeleton />}>{children}</PersistBoundary>
-            ) : (
-              children
-            )}
-          </OnboardTheme>
+          <OnboardTheme>{children}</OnboardTheme>
         </div>
       </div>
 
@@ -55,12 +36,18 @@ export default function FormColumn({
           ever be that wide. It carries its own inline padding instead. */}
       <div className={styles.formFooter}>
         <span>© {new Date().getFullYear()} Brandwik</span>
-        <a href={`${MARKETING_URL}/privacy`} target="_blank" rel="noreferrer">
-          Privacy
-        </a>
-        <a href={`${MARKETING_URL}/terms`} target="_blank" rel="noreferrer">
-          Terms
-        </a>
+
+        {/* Grouped so `space-between` has two things to separate — with all
+            three as siblings it would spread the copyright and both links
+            evenly across the column instead of pinning the links right. */}
+        <span className={styles.footerLinks}>
+          <a href={`${MARKETING_URL}/privacy`} target="_blank" rel="noreferrer">
+            Privacy
+          </a>
+          <a href={`${MARKETING_URL}/terms`} target="_blank" rel="noreferrer">
+            Terms
+          </a>
+        </span>
       </div>
     </main>
   );

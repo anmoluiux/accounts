@@ -162,10 +162,17 @@ export default function Building() {
       {OverallStatus?.status === "COMPLETED" &&
         <Card title="Store details" size="small" style={{ marginTop: 24 }}>
 
+          {/* Vertical, and no fixed label width. Horizontally with a 220px
+              label there is ~150px left for the value inside the 452px form
+              column, which broke the store URLs onto one character per line.
+              Stacking gives the value the full width. */}
           <Descriptions
             column={1}
-            labelStyle={{ fontWeight: 500, width: 220 }}
-            contentStyle={{ display: "flex", alignItems: "center" }}
+            layout="vertical"
+            size="small"
+            colon={false}
+            labelStyle={{ fontWeight: 500 }}
+            contentStyle={{ display: "flex", alignItems: "center", width: "100%", wordBreak: "break-all" }}
           >
             {/* Site Name */}
             <Descriptions.Item

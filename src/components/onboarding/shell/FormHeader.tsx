@@ -1,8 +1,10 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useAppSelector } from "@/src/lib/hooks";
 import { useRehydrated } from "@/src/store/useRehydrated";
 import { STEP_COUNT } from "../showcase/showcase.data";
+import { IN_FUNNEL } from "@/src/lib/routes";
 import styles from "../onboard.module.css";
 
 /**
@@ -15,14 +17,19 @@ import styles from "../onboard.module.css";
  * is the only progress signal on the page from step 2 onwards.
  */
 export default function FormHeader() {
+  const pathname = usePathname();
   const rehydrated = useRehydrated();
   const currentStep = useAppSelector((state) => state.onboarding.currentStep);
   const displayStep = Math.min(Math.max(currentStep, 0), STEP_COUNT - 1);
 
-  // Nothing on step 0, and nothing until persisted state lands — the latter
-  // also keeps the prerendered HTML and the hydration render identical, since
-  // the static export has no store yet.
-  if (!rehydrated || displayStep < 1) return null;
+  // Nothing off the funnel: /login shares this column, and a visitor who
+  // abandoned at step 3 still has currentStep: 2 persisted — without this the
+  // sign-in page would claim "Step 3 of 3".
+  //
+  // Nothing on step 0, and nothing until persisted state lands — the latter also
+  // keeps the prerendered HTML and the hydration render identical, since the
+  // static export has no store yet.
+  if (!IN_FUNNEL(pathname) || !rehydrated || displayStep < 1) return null;
 
   return (
     <div className={styles.formHeader}>

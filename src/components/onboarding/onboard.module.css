@@ -150,12 +150,19 @@
 .formFooter {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 4px 14px;
   margin-top: auto;
   padding: 20px clamp(20px, 4vw, 40px) 24px;
   border-top: 1px solid var(--bw-line);
   font-size: 11.5px;
   color: var(--bw-ink-faint);
+}
+
+.footerLinks {
+  display: flex;
+  gap: 14px;
 }
 
 .formFooter a {
@@ -401,6 +408,7 @@
 /* Segmented control. Two equal columns rather than inline-flex so the thumb
    never resizes as the labels change. */
 .tabs {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
@@ -410,7 +418,31 @@
   background: var(--bw-cream-sunk);
 }
 
+/* The white thumb slides between the two options instead of the background
+   popping on and off each button — that pop is most of what made the switch
+   feel abrupt. Geometry: each column is (100% − 8px padding − 4px gap) / 2,
+   i.e. 50% − 6px; the second column starts one thumb-width plus one gap along. */
+.tabs::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 6px);
+  border-radius: 9px;
+  background: var(--bw-surface);
+  box-shadow: 0 1px 2px rgba(22, 25, 26, 0.07);
+  transition: transform 0.3s cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+
+.tabsSecond::before {
+  transform: translateX(calc(100% + 4px));
+}
+
 .tab {
+  /* Above the thumb, which is painted on the track behind them. */
+  position: relative;
+  z-index: 1;
   padding: 9px 12px;
   border: 0;
   border-radius: 9px;
@@ -420,7 +452,7 @@
   font-weight: 600;
   color: var(--bw-ink-soft);
   cursor: pointer;
-  transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  transition: color 0.22s ease;
 }
 
 .tab:hover {
@@ -428,9 +460,46 @@
 }
 
 .tabActive {
-  background: var(--bw-surface);
   color: var(--bw-ink);
-  box-shadow: 0 1px 2px rgba(22, 25, 26, 0.07);
+}
+
+/* ── Cross-fading panel swap ─────────────────────────────────────────────── */
+
+/*
+ * Both panels occupy one grid cell, so with no JS the box sizes to the taller
+ * of the two and the prerendered HTML is correct. Once mounted, LoginForm
+ * measures the active panel and sets an explicit height here, which this
+ * transitions — otherwise the ~70px difference between the two forms snaps the
+ * button and everything below it up the page.
+ */
+.swap {
+  display: grid;
+  overflow: hidden;
+  transition: height 0.34s cubic-bezier(0.22, 0.7, 0.3, 1);
+}
+
+.swapPanel {
+  grid-area: 1 / 1;
+  /* Without this, grid items stretch to the row height — so each panel would
+     measure as the taller of the two and LoginForm's ResizeObserver would read
+     the same number for both, leaving the height fixed. */
+  align-self: start;
+  min-width: 0;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.24s ease, transform 0.24s ease, visibility 0s linear 0.24s;
+}
+
+/* The incoming panel waits for the outgoing one to clear before fading in, so
+   the two never overlap mid-transition. */
+.swapPanelActive {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  visibility: visible;
+  transition: opacity 0.26s ease 0.1s, transform 0.26s ease 0.1s, visibility 0s;
 }
 
 .inlineLink {
@@ -512,5 +581,14 @@
   .stepEnter,
   .skeletonBar {
     animation: none;
+  }
+  .swap,
+  .tabs::before {
+    transition: none;
+  }
+  .swapPanel,
+  .swapPanelActive {
+    transform: none;
+    transition: opacity 0.01s linear, visibility 0s;
   }
 }

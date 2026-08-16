@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Alert, Button, Input } from "antd";
 import { URL, MARKETING_URL } from "@/src/assets/url";
@@ -32,6 +32,35 @@ export default function LoginForm() {
     setError("");
     setMagicSent(false);
   };
+
+  /**
+   * Animating the swap needs a height to animate *to*, and the two panels are
+   * ~70px apart — so switching tabs used to snap the button and everything
+   * below it up the page.
+   *
+   * Both panels stay mounted, stacked in one grid cell, and this measures
+   * whichever is active so the container can transition between the two
+   * heights. Grid stacking (not absolute positioning) matters for the static
+   * export: with no JS the container still sizes to the taller panel, so the
+   * prerendered HTML is correct rather than collapsed to zero.
+   *
+   * A ResizeObserver rather than a one-off read, because an error alert or the
+   * "check your inbox" message changes the active panel's height too.
+   */
+  const swapRef = useRef<HTMLDivElement>(null);
+  const [panelHeight, setPanelHeight] = useState<number>();
+
+  useEffect(() => {
+    const active = swapRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!active) return;
+
+    const measure = () => setPanelHeight(active.offsetHeight);
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(active);
+    return () => observer.disconnect();
+  }, [mode]);
 
   /**
    * One request helper for both flows.
@@ -130,7 +159,13 @@ export default function LoginForm() {
 
       <div className={styles.divider}>OR</div>
 
-      <div className={styles.tabs} role="tablist" aria-label="Sign-in method">
+      {/* The white thumb is a pseudo-element on the track that slides, rather
+          than a background that pops on and off the active button. */}
+      <div
+        className={`${styles.tabs}${mode === "magic" ? ` ${styles.tabsSecond}` : ""}`}
+        role="tablist"
+        aria-label="Sign-in method"
+      >
         <button
           type="button"
           role="tab"
@@ -151,107 +186,128 @@ export default function LoginForm() {
         </button>
       </div>
 
-      {mode === "password" ? (
-        <form className={styles.fields} onSubmit={handlePasswordSubmit}>
-          {/* Email, not "username": laracom identifies customers by email
-              everywhere else in this app (/onboard/check-email, register). */}
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="login-email">
-              Email
-            </label>
-            <Input
-              id="login-email"
-              size="large"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <div className={styles.fieldRow}>
-              <label className={styles.label} htmlFor="login-password">
-                Password
+      {/* Both panels stay mounted so the swap can cross-fade; `inert` keeps the
+          hidden one out of the tab order, and the shared `email` state means
+          whatever was typed survives the switch. */}
+      <div className={styles.swap} ref={swapRef} style={panelHeight ? { height: panelHeight } : undefined}>
+        <div
+          className={`${styles.swapPanel}${mode === "password" ? ` ${styles.swapPanelActive}` : ""}`}
+          data-active={mode === "password"}
+          aria-hidden={mode !== "password"}
+          inert={mode !== "password"}
+        >
+          <form className={styles.fields} onSubmit={handlePasswordSubmit}>
+            {/* Email, not "username": laracom identifies customers by email
+                everywhere else in this app (/onboard/check-email, register). */}
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="login-email">
+                Email
               </label>
-              {/* There is no password-reset flow yet either, so this points at
-                  support rather than a /forgot-password route that would 404.
-                  Swap the href once laracom has one. */}
-              <a
-                className={styles.inlineLink}
-                href={`${MARKETING_URL}/contact`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Forgot password?
-              </a>
+              <Input
+                id="login-email"
+                size="large"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
-            <Input.Password
-              id="login-password"
+
+            <div className={styles.field}>
+              <div className={styles.fieldRow}>
+                <label className={styles.label} htmlFor="login-password">
+                  Password
+                </label>
+                {/* There is no password-reset flow yet either, so this points at
+                    support rather than a /forgot-password route that would 404.
+                    Swap the href once laracom has one. */}
+                <a
+                  className={styles.inlineLink}
+                  href={`${MARKETING_URL}/contact`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Forgot password?
+                </a>
+              </div>
+              <Input.Password
+                id="login-password"
+                size="large"
+                placeholder="••••••••••"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+
+            {error && mode === "password" && (
+              <Alert type="error" showIcon message={error} closable onClose={() => setError("")} />
+            )}
+
+            <Button
+              type="primary"
+              htmlType="submit"
               size="large"
-              placeholder="••••••••••"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+              block
+              className={styles.submit}
+              loading={isSubmitting}
+              disabled={!email || !password || isSubmitting}
+            >
+              Sign in
+            </Button>
+          </form>
+        </div>
 
-          {error && <Alert type="error" showIcon message={error} closable onClose={() => setError("")} />}
+        <div
+          className={`${styles.swapPanel}${mode === "magic" ? ` ${styles.swapPanelActive}` : ""}`}
+          data-active={mode === "magic"}
+          aria-hidden={mode !== "magic"}
+          inert={mode !== "magic"}
+        >
+          <form className={styles.fields} onSubmit={handleMagicSubmit}>
+            <div className={styles.field}>
+              <label className={styles.label} htmlFor="magic-email">
+                Email
+              </label>
+              <Input
+                id="magic-email"
+                size="large"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <span className={styles.hint}>We&apos;ll email you a link that signs you in. No password needed.</span>
+            </div>
 
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            className={styles.submit}
-            loading={isSubmitting}
-            disabled={!email || !password || isSubmitting}
-          >
-            Sign in
-          </Button>
-        </form>
-      ) : (
-        <form className={styles.fields} onSubmit={handleMagicSubmit}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="magic-email">
-              Email
-            </label>
-            <Input
-              id="magic-email"
+            {error && mode === "magic" && (
+              <Alert type="error" showIcon message={error} closable onClose={() => setError("")} />
+            )}
+            {magicSent && (
+              <Alert
+                type="success"
+                showIcon
+                message="Check your inbox"
+                description={`If an account exists for ${email}, a sign-in link is on its way.`}
+              />
+            )}
+
+            <Button
+              type="primary"
+              htmlType="submit"
               size="large"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <span className={styles.hint}>We&apos;ll email you a link that signs you in. No password needed.</span>
-          </div>
-
-          {error && <Alert type="error" showIcon message={error} closable onClose={() => setError("")} />}
-          {magicSent && (
-            <Alert
-              type="success"
-              showIcon
-              message="Check your inbox"
-              description={`If an account exists for ${email}, a sign-in link is on its way.`}
-            />
-          )}
-
-          <Button
-            type="primary"
-            htmlType="submit"
-            size="large"
-            block
-            className={styles.submit}
-            loading={isSubmitting}
-            disabled={!email || isSubmitting}
-          >
-            Send magic link
-          </Button>
-        </form>
-      )}
+              block
+              className={styles.submit}
+              loading={isSubmitting}
+              disabled={!email || isSubmitting}
+            >
+              Send magic link
+            </Button>
+          </form>
+        </div>
+      </div>
 
       <p className={styles.altAction}>
         New to Brandwik? <Link href="/onboard">Start your free store</Link>
