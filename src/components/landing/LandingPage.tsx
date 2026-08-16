@@ -290,7 +290,17 @@ const LandingPage = () => {
               <Flex wrap="wrap" gap={12} justify="center">
                 {['Shopify', 'Slack', 'Mailchimp', 'Google Analytics', 'Zapier', 'Salesforce', 'Zendesk', 'PayPal', 'Notion'].map(item => (
                   <Tag key={item} className={styles.integrationTag}>
-                    <Avatar size="small" style={{ marginRight: 8 }} src={`https://ui-avatars.com/api/?name=${item}&background=random`} />
+                    {/* alt="" marks the avatar decorative, which it is: the same
+                        name is already the Tag's visible text one node later, so
+                        a descriptive alt would make a screen reader announce
+                        every integration twice. Without any alt at all the <img>
+                        AntD renders is an unlabelled image and fails axe. */}
+                    <Avatar
+                      size="small"
+                      alt=""
+                      style={{ marginRight: 8 }}
+                      src={`https://ui-avatars.com/api/?name=${item}&background=random`}
+                    />
                     {item}
                   </Tag>
                 ))}

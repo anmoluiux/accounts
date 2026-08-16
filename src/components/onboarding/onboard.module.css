@@ -29,7 +29,14 @@
 
   --bw-ink: #16191a;
   --bw-ink-soft: #5c625c;
-  --bw-ink-faint: #8a8f88;
+  /* Darkened from #8a8f88, which failed WCAG AA everywhere it was used: 2.94:1
+     on cream, 3.30:1 on white, 2.76:1 on the sunk tab track — against a 4.5:1
+     requirement. It set the colour of the `.bravo.com` address suffix, every
+     field hint, the step eyebrow and the whole footer, so one token was
+     responsible for all five contrast failures Lighthouse reported.
+     This value clears 4.5:1 on all three backgrounds (4.92 / 5.53 / 4.62) and
+     stays in the same green-grey family. */
+  --bw-ink-faint: #656a64;
   --bw-line: #dedbcc;
 
   --bw-forest: #2e4b3a;
@@ -106,7 +113,7 @@
 }
 
 .stepCount {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -156,7 +163,7 @@
   margin-top: auto;
   padding: 20px clamp(20px, 4vw, 40px) 24px;
   border-top: 1px solid var(--bw-line);
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--bw-ink-faint);
 }
 
@@ -207,7 +214,7 @@
   border: 1px solid var(--bw-line);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.7);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--bw-forest);
@@ -255,19 +262,19 @@
 }
 
 .hint {
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.5;
   color: var(--bw-ink-faint);
 }
 
 .error {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--bw-danger);
 }
 
 .ok {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--bw-forest);
 }
@@ -391,7 +398,7 @@
   align-items: center;
   gap: 14px;
   margin: 22px 0;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--bw-ink-faint);

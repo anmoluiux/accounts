@@ -58,7 +58,11 @@ function ProofRow({ items, duplicate = false }: { items: readonly Proof[]; dupli
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <span className={styles.stars} aria-label={`${rating} out of 5`}>
+    // `role="img"` is required, not decorative: `aria-label` is prohibited on a
+    // bare <span>, because a span has no implicit role for the label to name —
+    // so screen readers discard it and the rating is announced as five
+    // meaningless graphics. The role makes the group a single labelled image.
+    <span className={styles.stars} role="img" aria-label={`${rating} out of 5`}>
       {Array.from({ length: 5 }, (_, i) => (
         <svg
           key={i}
