@@ -1,8 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Button, Input, Checkbox, Form, Alert } from "antd";
+// [step2-optional-fields] `Checkbox` is used only by the hidden feature picker
+// below — add it back to this import when that block is re-enabled.
+import { Button, Input, Form, Alert } from "antd";
 import { ArrowLeftOutlined, RocketFilled, CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from "@ant-design/icons";
+import PhoneField from "./PhoneField";
 import styles from "./onboard.module.css";
 // import PhoneInput from "react-phone-number-input";
 // import "react-phone-number-input/style.css"; // Import default styles
@@ -12,9 +15,11 @@ import { URL } from "@/src/assets/url";
 import debounce from "lodash/debounce";
 
 
-const { TextArea } = Input;
+// [step2-optional-fields] Only the hidden "What do you sell?" textarea used this.
+// const { TextArea } = Input;
 
-// AI Logic: Smart features based on Store Type
+// [step2-optional-fields] AI Logic: Smart features based on Store Type
+/*
 const FEATURE_SUGGESTIONS: Record<string, { label: string, value: string }[]> = {
   fashion: [
     { label: "Size Guide", value: "site_guide" },
@@ -47,6 +52,7 @@ const FEATURE_SUGGESTIONS: Record<string, { label: string, value: string }[]> = 
     { label: "Blog", value: "blog" }
   ],
 };
+*/
 
 // Module scope, same reasoning as Step1_Prompt's StatusIcon: a component
 // declared inside the render body is a new type every render, which remounts
@@ -64,8 +70,8 @@ export default function Details() {
   const stepData = onBoard.stepData;
   const [form] = Form.useForm();
 
-  // Load correct suggestions based on Step 1 selection
-  const activeSuggestions = FEATURE_SUGGESTIONS[stepData.siteType || "default"] || FEATURE_SUGGESTIONS["default"];
+  // [step2-optional-fields] Load correct suggestions based on Step 1 selection
+  // const activeSuggestions = FEATURE_SUGGESTIONS[stepData.siteType || "default"] || FEATURE_SUGGESTIONS["default"];
 
   // Email validation state
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
@@ -132,15 +138,17 @@ export default function Details() {
   // Pre-fill form on mount
   useEffect(() => {
     form.setFieldsValue({
-      description: stepData.description,
+      // [step2-optional-fields] restore these two with the hidden fields, and
+      // put `activeSuggestions` back in the dep array below.
+      // description: stepData.description,
       // `.value`, not the whole object: Checkbox.Group matches against the
       // string values, so seeding it with {label,value} left nothing visibly
       // checked AND posted an array of objects to /onboard/lead.
-      features: stepData.features?.length ? stepData.features : [activeSuggestions[0].value], // Pre-select first one
+      // features: stepData.features?.length ? stepData.features : [activeSuggestions[0].value], // Pre-select first one
       email: stepData.email,
       phone: stepData.phone,
     });
-  }, [form, stepData, activeSuggestions]);
+  }, [form, stepData]);
 
   // Every await below used to be unguarded: a non-2xx from /onboard/register
   // threw inside `data.data.site`, the form sat there, and the user saw nothing.
@@ -151,7 +159,17 @@ export default function Details() {
 
     try {
       // STEP 1 : Save LEAD to Redux and DB
-      dispatch(updateFormData({ description: values.description, features: values.features, email: values.email, phone: values.phone, }));
+      // [step2-optional-fields] `description` and `features` are deliberately
+      // not sent while their fields are hidden. Omitting a key leaves whatever
+      // is already stored on the lead untouched — upsert() only writes keys
+      // present in the payload — whereas sending `undefined` for a field the
+      // user can no longer see would look like an intentional clear.
+      dispatch(updateFormData({
+        // description: values.description,
+        // features: values.features,
+        email: values.email,
+        phone: values.phone,
+      }));
       await dispatch(saveProgress()).unwrap();
 
       // STEP 2 : Register lead as Customer : Returns Customer and Site data
@@ -230,15 +248,28 @@ export default function Details() {
       {/* Single column: the form lives in the 40% rail, so a two-up grid would
           crush every control. `size="large"` matches step 1's controls. */}
       <Form form={form} layout="vertical" onFinish={onFinish} requiredMark={false} size="large">
-        {/* 1. Business Description */}
-        <Form.Item label="What do you sell?" name="description" rules={[{ required: true, message: "Please write a short description." }]}>
+        {/* [step2-optional-fields] "What do you sell?" and "Features you want"
+            are hidden for now. Both are `nullable` on /onboard/lead and neither
+            is read anywhere in the store build, so nothing downstream needs
+            them. The required rule on the description is dropped here too — on
+            re-enable it comes back optional, as asked.
+
+            To re-enable, uncomment this block and the four other spots marked
+            `step2-optional-fields` in this file: the `Checkbox` import, the
+            `TextArea` destructure, `FEATURE_SUGGESTIONS` / `activeSuggestions`,
+            the `setFieldsValue` prefill, and the `updateFormData` payload.
+            The `.featureGrid` / `.featureTile` styles are still in
+            onboard.module.css, untouched.
+
+        1. Business Description
+        <Form.Item label="What do you sell?" name="description">
           <TextArea rows={3} placeholder="e.g. Premium leather sneakers for urban hikers, based in NYC." />
         </Form.Item>
 
-        {/* 2. Smart Features (Checkboxes) */}
+        2. Smart Features (Checkboxes)
         <Form.Item label="Features you want" name="features">
-          {/* Tiles are divs, not labels: antd's Checkbox already renders its own
-              <label>, and nesting labels is invalid HTML. */}
+          Tiles are divs, not labels: antd's Checkbox already renders its own
+          <label>, and nesting labels is invalid HTML.
           <Checkbox.Group className={styles.featureGrid}>
             {activeSuggestions.map((feature) => (
               <div key={feature.value} className={styles.featureTile}>
@@ -247,6 +278,7 @@ export default function Details() {
             ))}
           </Checkbox.Group>
         </Form.Item>
+        */}
 
         {/* 3. Email */}
         <Form.Item
@@ -271,10 +303,14 @@ export default function Details() {
           />
         </Form.Item>
 
-        {/* 4. Phone (Custom Lib) */}
-        {/* <PhoneInput defaultCountry="US" placeholder="Enter phone number" value={phoneValue} onChange={(val) => setPhoneValue(val as string)} /> */}
+        {/* 4. Phone — country prefix is searchable by name, ISO code or dial
+            code. PhoneField is a plain value/onChange control, so Form.Item
+            drives it like any built-in input and the rule below is unchanged.
+            The old react-phone-number-input line lived here; that package was
+            never installed, and its stylesheet would have had to be fought back
+            into the brand theme anyway. */}
         <Form.Item label="Phone" name="phone" rules={[{ required: true, message: "Phone number is required" }]}>
-          <Input autoComplete="tel" placeholder="+1 555 000 1234" />
+          <PhoneField />
         </Form.Item>
 
         <Form.Item

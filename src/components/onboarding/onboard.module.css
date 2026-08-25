@@ -99,7 +99,7 @@
   flex-direction: column;
   gap: 28px;
   width: 100%;
-  max-width: 452px;
+  max-width: 500px;
   margin-inline: auto;
   /* No bottom padding: the footer is now a sibling and brings its own. */
   padding: clamp(28px, 4.5vw, 56px) clamp(20px, 4vw, 40px) 0;
@@ -149,6 +149,24 @@
   flex: 1;
   flex-direction: column;
   justify-content: center;
+}
+
+/* Vertical form labels: collapse AntD's fixed label box to the text itself.
+   AntD sizes every label to a control height so labels line up with their input
+   in HORIZONTAL layouts. It knows that is wrong when stacked and ships
+   `.ant-form-item-vertical .ant-form-item-label > label { height: auto }` — but
+   its own size rule, `.ant-form-large .ant-form-item .ant-form-item-label >
+   label { height: var(--ant-control-height-lg) }`, carries one more class and
+   outranks it. Every funnel form is `layout="vertical" size="large"`, so each
+   13px label sat centred in a 48px box: ~35px of dead air between label and
+   field, before `verticalLabelPadding` was even applied.
+
+   Not fixable from the theme — the `Form.labelHeight` token feeds a (0,2,1)
+   rule that loses to the same (0,3,1) size rule. Hence CSS, and hence four
+   classes: it has to outrank AntD's, whatever order the runtime injects in.
+   Label-to-field spacing is `verticalLabelPadding` in OnboardTheme. */
+.formBody :global(.ant-form-large .ant-form-item .ant-form-item-label) > label {
+  height: auto;
 }
 
 /* A direct child of `.formColumn`, not of the width-capped `.formInner`, so the
@@ -296,7 +314,7 @@
   pointer-events: none;
 }
 
-/* Feature picker (step 2). Two-up at 452px is tight but readable; the tiles are
+/* Feature picker (step 2). Two-up at 500px is comfortable; the tiles are
    the click target, not just the checkbox. */
 .featureGrid {
   display: grid;
@@ -325,6 +343,111 @@
 .featureTile :global(.ant-checkbox-wrapper) {
   width: 100%;
   font-size: 13px;
+}
+
+/* ── Phone field ─────────────────────────────────────────────────────────────
+   A country Select living inside the number Input's `prefix` slot, so the pair
+   reads as one control with one border and one focus ring.
+
+   Note the class names: AntD 6 rebuilt Select's internals, and the
+   `.ant-select-selector` box that every phone-input snippet on the web styles
+   NO LONGER EXISTS. The real nodes are `.ant-select-content` (the value),
+   `.ant-select-input` (the search field) and `.ant-select-suffix` (the arrow).
+   Verified by rendering the component and reading the emitted CSS, not assumed.
+
+   Every override is scoped under `.phonePrefix`, which is a CSS-module class, so
+   these carry one more class than AntD's own rules and win without `!important`
+   — the same specificity argument as the label-height fix above. */
+.phonePrefix {
+  display: flex;
+  align-items: center;
+  margin-inline-end: 10px;
+  padding-inline-end: 10px;
+  border-inline-end: 1px solid var(--bw-line);
+}
+
+/* AntD sizes the Select to a full control height (40px, or 48 at size large).
+   Inside an Input that is itself 48px tall with 11px of padding, the usable
+   space is ~24px — so the height has to collapse to its content or the prefix
+   pushes the field open. */
+.phonePrefix :global(.ant-select) {
+  height: auto;
+  min-width: 88px;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* Two rules, not one selector list: `:global(a), :global(b)` compiles to a
+   stray ")" in the output and an invalid selector invalidates the ENTIRE group,
+   so the padding reset silently applied to neither. Caught in the built CSS. */
+.phonePrefix :global(.ant-select .ant-select-content) {
+  padding: 0;
+}
+
+.phonePrefix :global(.ant-select .ant-select-input) {
+  padding: 0;
+}
+
+.phonePrefix :global(.ant-select .ant-select-suffix) {
+  margin-inline-start: 4px;
+  color: var(--bw-ink-faint);
+  /* The arrow is 9px and purely decorative; AntD's default transition on it
+     reads as a twitch next to a field the user is typing into. */
+  transition: transform 0.18s ease;
+}
+
+.phonePrefix :global(.ant-select-open .ant-select-suffix) {
+  transform: rotate(180deg);
+}
+
+.phoneValue,
+.phoneOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Vendored SVGs from `public/flags`, not emoji — Windows has no flag glyphs, so
+   emoji rendered as the bare ISO letters there. The hairline ring is doing real
+   work: flags that are mostly white (Japan, Finland) would otherwise dissolve
+   into the white field and the popup. */
+.phoneFlag {
+  flex: none;
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgb(22 25 26 / 9%);
+}
+
+.phoneDial {
+  color: var(--bw-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.phoneOption {
+  gap: 10px;
+}
+
+/* Takes the slack so the dial code can sit hard right, and truncates the few
+   very long names ("South Georgia and the South Sandwich Islands") instead of
+   wrapping the row to two lines. */
+.phoneOptionName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneOptionDial {
+  flex: none;
+  color: var(--bw-ink-faint);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.phonePopup :global(.ant-select-item-option-content) {
+  overflow: visible;
 }
 
 .submit {

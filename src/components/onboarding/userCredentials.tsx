@@ -163,7 +163,7 @@ export default function Building() {
         <Card title="Store details" size="small" style={{ marginTop: 24 }}>
 
           {/* Vertical, and no fixed label width. Horizontally with a 220px
-              label there is ~150px left for the value inside the 452px form
+              label there is ~200px left for the value inside the 500px form
               column, which broke the store URLs onto one character per line.
               Stacking gives the value the full width. */}
           <Descriptions

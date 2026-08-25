@@ -32,7 +32,7 @@ export default function FormColumn({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Outside `.formInner` so it spans the whole column: that wrapper caps
-          itself at the form's reading width (452px), and a child of it can only
+          itself at the form's reading width (500px), and a child of it can only
           ever be that wide. It carries its own inline padding instead. */}
       <div className={styles.formFooter}>
         <span>© {new Date().getFullYear()} Brandwik</span>

@@ -55,7 +55,9 @@ const onboardTheme: ThemeConfig = {
     Form: {
       labelColor: "#16191a",
       labelFontSize: 13,
-      verticalLabelPadding: "0 0 7px",
+      // No `labelHeight` here on purpose — under `size="large"` the token is
+      // dead. See `.formBody` in onboard.module.css for why, and for the fix.
+      verticalLabelPadding: "0 0 2px",
       itemMarginBottom: 19,
     },
   },
