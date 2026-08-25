@@ -24,6 +24,10 @@ const DEFAULT_ISO2 = "IN";
  */
 const BY_DIAL_LENGTH = [...COUNTRIES].sort((a, b) => b.d.length - a.d.length);
 
+/** Lookups by ISO code run on every render and every keystroke; 248-entry
+ *  linear scans are avoidable work in the typing path. */
+const BY_ISO2 = new Map(COUNTRIES.map((c) => [c.c, c]));
+
 function splitValue(value: string | undefined): { iso2: string; national: string } {
   if (!value) return { iso2: DEFAULT_ISO2, national: "" };
 
@@ -68,7 +72,7 @@ export default function PhoneField({
   // the flag from an empty string would snap it back to the default — pick the
   // UK, type, delete, and you are in India again.
   const [pickedIso2, setPickedIso2] = useState(() => splitValue(value).iso2);
-  const pickedDial = COUNTRIES.find((c) => c.c === pickedIso2)?.d ?? "";
+  const pickedDial = BY_ISO2.get(pickedIso2)?.d ?? "";
 
   // A `value` that does not start with the picked country's code did not come
   // from this component — it is redux-persist rehydrating a returning user's
@@ -83,6 +87,12 @@ export default function PhoneField({
   // resolve the shared NANP code to whichever country sorts first, so choosing
   // Canada and typing would visibly flip the flag to Anguilla.
   const national = external ? splitValue(value).national : (value?.slice(pickedDial.length) ?? "");
+
+  // The placeholder follows the flag: a real Indian mobile under +91, a real US
+  // one under +1. It is the only cue for how long the number should be, and a
+  // fixed 10-digit Indian example under, say, +49 (Germany runs to 11) quietly
+  // tells the user the wrong thing.
+  const example = BY_ISO2.get(iso2)?.e;
 
   // Built once. 248 options each carrying two JSX labels is enough work to show
   // up in the typing path of the number field sitting immediately beside it.
@@ -130,7 +140,7 @@ export default function PhoneField({
     // an adopted external value.
     setPickedIso2(nextIso2);
 
-    const nextDial = COUNTRIES.find((c) => c.c === nextIso2)?.d ?? "";
+    const nextDial = BY_ISO2.get(nextIso2)?.d ?? "";
     // An empty number emits "" rather than a bare "+91", so a `required` rule
     // still fails on an untouched field and no lead is stored holding nothing
     // but a country code.
@@ -142,7 +152,7 @@ export default function PhoneField({
       size="large"
       inputMode="tel"
       autoComplete="tel-national"
-      placeholder="9876543210"
+      placeholder={example ?? "Phone number"}
       disabled={disabled}
       value={national}
       onChange={(e) => {
