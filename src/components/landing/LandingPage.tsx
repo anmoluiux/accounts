@@ -58,6 +58,20 @@ const footerLinks = [
   },
 ];
 
+/**
+ * Shared by the three stats in the final CTA card, which sits on a dark
+ * background and so needs both slots forced to white.
+ *
+ * AntD 6 replaced `valueStyle` with the `styles` semantic-slot API, where the
+ * value lives in the `content` slot. `styles.title` covers the other half:
+ * each title used to be wrapped in `<span style={{ color: '#fff' }}>` purely to
+ * recolour it, which the slot now does without the extra element.
+ */
+const CTA_STAT_STYLES = {
+  title: { color: '#fff' },
+  content: { color: '#fff', fontSize: '14px' },
+};
+
 const NavLinks = () => (
   <>
     <Text strong className={styles.navLink}>Home</Text>
@@ -380,9 +394,9 @@ const LandingPage = () => {
                   Streamline your operations, track sales, and manage your team efficiently with our powerful dashboard.
                 </Paragraph>
                 <Row gutter={[32, 32]} style={{ marginTop: 32, marginBottom: 40 }}>
-                  <Col span={8}><Statistic title={<span style={{ color: '#fff' }}>75%</span>} value="Increase Efficiency" valueStyle={{ color: '#fff', fontSize: '14px' }} /></Col>
-                  <Col span={8}><Statistic title={<span style={{ color: '#fff' }}>500+</span>} value="Teams Empowered" valueStyle={{ color: '#fff', fontSize: '14px' }} /></Col>
-                  <Col span={8}><Statistic title={<span style={{ color: '#fff' }}>99.9%</span>} value="Uptime Guarantee" valueStyle={{ color: '#fff', fontSize: '14px' }} /></Col>
+                  <Col span={8}><Statistic title="75%" value="Increase Efficiency" styles={CTA_STAT_STYLES} /></Col>
+                  <Col span={8}><Statistic title="500+" value="Teams Empowered" styles={CTA_STAT_STYLES} /></Col>
+                  <Col span={8}><Statistic title="99.9%" value="Uptime Guarantee" styles={CTA_STAT_STYLES} /></Col>
                 </Row>
                 <Button size="large" shape="round" className={styles.whiteBtn}>Request a Demo</Button>
               </Col>
